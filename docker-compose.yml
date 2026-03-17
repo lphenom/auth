@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lphenom-auth-dev:latest
+    container_name: lphenom_auth_app
+    volumes:
+      - .:/app
+      - ~/.ssh:/root/.ssh:ro
+      - ~/.gitconfig:/root/.gitconfig:ro
+    working_dir: /app
+    environment:
+      - COMPOSER_HOME=/tmp/composer
+    tty: true
+    stdin_open: true

@@ -1,0 +1,102 @@
+# =============================================================================
+# Dockerfile.check — KPHP binary build + obfuscated PHAR build verification
+#
+# This Dockerfile verifies that lphenom/auth:
+#   1. Compiles cleanly with KPHP (produces a working binary)
+#   2. Can be packaged as an obfuscated PHAR archive
+#
+# Usage:
+#   docker build -f Dockerfile.check -t lphenom-auth-check .
+#
+# Both build stages must succeed (exit 0) for the check to pass.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: KPHP binary build
+# Uses the official vkcom/kphp image (Ubuntu 20.04 focal, KPHP + PHP 7.4-vkext).
+# KPHP parses the source with its own PHP parser — it does NOT need PHP 8.1
+# at compile time; the output binary runs without PHP.
+# -----------------------------------------------------------------------------
+FROM vkcom/kphp:latest AS kphp-build
+
+# Install php8.1-vkext from the official vkpartner APT repository (optional dev tooling).
+# Installation may fail in air-gapped environments; build continues regardless.
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && wget -q --timeout=10 -O /etc/apt/trusted.gpg.d/vkpartner.asc \
+         https://artifactory-external.vkpartner.ru/artifactory/api/gpg/key/public \
+    && echo "deb [arch=amd64] https://artifactory-external.vkpartner.ru/artifactory/kphp focal main" \
+         > /etc/apt/sources.list.d/vkpartner.list \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends php8.1-vkext \
+    && echo "=== php8.1-vkext installed ===" \
+    || echo "=== php8.1-vkext SKIPPED (no network or repo unavailable — OK for compilation) ===" \
+    ; rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy only the source files needed for compilation
+COPY src/    ./src/
+COPY build/  ./build/
+
+# Compile to binary.
+RUN kphp \
+        -d /build/kphp-out \
+        -M cli \
+        /build/build/kphp-entrypoint.php \
+    && echo "=== KPHP compilation: OK ===" \
+    && ls -lh /build/kphp-out/
+
+# Run the compiled binary to verify it actually works.
+# KPHP CLI binaries refuse to run as root — create a test user.
+RUN useradd -m kphp-runner \
+    && su kphp-runner -c '/build/kphp-out/cli' \
+    && echo "=== KPHP binary run: OK ==="
+
+# -----------------------------------------------------------------------------
+# Stage 2: PHAR (shared-hosting) build
+# Uses PHP 8.1 with phar.readonly=0.
+# -----------------------------------------------------------------------------
+FROM php:8.1.31-cli AS phar-build
+
+WORKDIR /build
+
+# phar.readonly must be Off to allow creating PHAR archives
+RUN echo "phar.readonly = Off" > /usr/local/etc/php/conf.d/phar.ini
+
+# Install system deps required by Composer (git for VCS repos, unzip for dist)
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer (pinned version)
+COPY --from=composer:2.9.5 /usr/bin/composer /usr/bin/composer
+
+# Copy project files
+COPY src/          ./src/
+COPY build/        ./build/
+COPY composer.json ./composer.json
+COPY composer.lock* ./
+
+# Install production dependencies only (no dev)
+RUN composer install \
+        --no-dev \
+        --no-progress \
+        --prefer-dist \
+        --optimize-autoloader \
+        --no-interaction
+
+# Build the PHAR
+RUN php -d phar.readonly=0 /build/build/build-phar.php
+
+# Smoke-test: load the PHAR and verify autoloading works
+RUN php /build/build/smoke-test-phar.php /build/lphenom-auth.phar \
+    && echo "=== PHAR build: OK ==="
+
+# -----------------------------------------------------------------------------
+# Final stage — copies both artefacts, proves both stages completed
+# -----------------------------------------------------------------------------
+FROM scratch AS check-complete
+COPY --from=kphp-build /build/kphp-out/cli        /kphp-cli-binary
+COPY --from=phar-build /build/lphenom-auth.phar   /lphenom-auth.phar
+

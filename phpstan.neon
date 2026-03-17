@@ -1,0 +1,13 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    phpVersion: 80100
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        -
+            message: '#Negated boolean expression is always false#'
+            path: src/Support/EmailSender/SmtpEmailSender.php
