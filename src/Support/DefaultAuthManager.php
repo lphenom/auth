@@ -9,6 +9,7 @@ use LPhenom\Auth\Contracts\AuthenticatedUserInterface;
 use LPhenom\Auth\Contracts\AuthManagerInterface;
 use LPhenom\Auth\Contracts\LoginThrottleInterface;
 use LPhenom\Auth\Contracts\PasswordHasherInterface;
+use LPhenom\Auth\Contracts\PasswordHashUpdaterInterface;
 use LPhenom\Auth\Contracts\TokenEncoderInterface;
 use LPhenom\Auth\Contracts\TokenRepositoryInterface;
 use LPhenom\Auth\Contracts\UserProviderInterface;
@@ -109,6 +110,20 @@ final class DefaultAuthManager implements AuthManagerInterface
         if (!$this->hasher->verify($password, $passwordHash)) {
             $this->onLoginFail($login, $throttleKey);
             return null;
+        }
+
+        // Auto-rehash on login if the stored hash format is outdated.
+        // Enables seamless migration: bcrypt → lphenom (shared→kphp) and
+        // lphenom iteration upgrade. Requires UserProvider to implement
+        // PasswordHashUpdaterInterface; silently skipped otherwise.
+        if ($this->hasher->needsRehash($passwordHash)) {
+            if ($this->userProvider instanceof PasswordHashUpdaterInterface) {
+                $newHash = $this->hasher->hash($password);
+                $this->userProvider->updateAuthPasswordHash(
+                    $user->getAuthIdentifier(),
+                    $newHash
+                );
+            }
         }
 
         // Success — reset throttle

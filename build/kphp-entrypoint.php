@@ -99,6 +99,7 @@ require_once __DIR__ . '/../src/Contracts/AuthManagerInterface.php';
 require_once __DIR__ . '/../src/Contracts/LoginThrottleInterface.php';
 require_once __DIR__ . '/../src/Contracts/AuditListenerInterface.php';
 require_once __DIR__ . '/../src/Contracts/CodeSenderInterface.php';
+require_once __DIR__ . '/../src/Contracts/PasswordHashUpdaterInterface.php';
 
 // =============================================================================
 // lphenom/auth — DTOs (@lphenom-build shared,kphp)

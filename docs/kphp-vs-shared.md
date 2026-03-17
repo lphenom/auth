@@ -186,30 +186,101 @@ result = h  // 64 hex символа (SHA-256)
 
 ---
 
-#### ⚠️ Несовместимость хешей — КРИТИЧЕСКИЙ НЮАНС
+#### ✅ Совместимость хешей — `CompatPasswordHasher`
 
-> **Хеши `BcryptPasswordHasher` и `CryptPasswordHasher` НЕ взаимозаменяемы!**
+Хеши **совместимы** при переходе между режимами благодаря
+`CompatPasswordHasher` (`@lphenom-build shared`).
 
-Bcrypt хеш: `$2y$10$...`
-Lphenom хеш: `$lphenom$sha256$...`
+Этот класс:
+- **`verify()`** — верифицирует ОБА формата: bcrypt (`$2y$…`) И lphenom (`$lphenom$sha256$…`)
+- **`hash()`** — всегда создаёт lphenom-формат (KPHP-совместимый)
+- **`needsRehash()`** — возвращает `true` для bcrypt-хешей (нужна миграция)
 
-При переходе `shared` → `kphp` (или обратно) **все пользователи должны сбросить пароль**.
-
-**Стратегия миграции:**
-1. Смена режима → принудительный logout всех активных сессий
-2. Отзыв всех выданных токенов (`tokenRepo->revokeAllForUser(...)`)
-3. Email всем пользователям: "Обновите пароль по ссылке"
-4. При первом входе с новым паролем — хеш пересоздаётся в нужном формате
-
-**Пример проверки совместимости при чтении хеша:**
 ```php
-// Определить тип хеша по префиксу:
-if (str_starts_with($hash, '$2y$') || str_starts_with($hash, '$2b$')) {
-    // Это bcrypt (shared-режим)
-} elseif (str_starts_with($hash, '$lphenom$sha256$')) {
-    // Это CryptPasswordHasher (kphp-режим)
+use LPhenom\Auth\Hashing\CompatPasswordHasher;
+
+$hasher = new CompatPasswordHasher(iterations: 10000);
+
+// Верифицирует bcrypt-хеш (legacy, shared):
+$hasher->verify('password', '$2y$10$...');    // ✅ true
+
+// Верифицирует lphenom-хеш (kphp):
+$hasher->verify('password', '$lphenom$sha256$...');  // ✅ true
+
+// Всегда создаёт lphenom-формат:
+$hasher->hash('password');  // "$lphenom$sha256$10000$..."
+```
+
+---
+
+#### Сценарий: shared → kphp (bcrypt → lphenom)
+
+```
+Шаг 1. Запускаете PHP shared-режим с CompatPasswordHasher.
+Шаг 2. Пользователи логинятся: verify(bcrypt) = ✅,
+        needsRehash(bcrypt) = true →
+        DefaultAuthManager вызывает updateAuthPasswordHash() →
+        хеш в БД обновляется до lphenom-формата.
+Шаг 3. После логина всех пользователей хотя бы раз —
+        все хеши в БД уже в lphenom-формате.
+Шаг 4. Переключаете сборку на KPHP.
+        CryptPasswordHasher верифицирует lphenom-хеши ✅.
+        Никаких потерь данных.
+```
+
+```php
+// config/auth.php — переходный shared-режим перед kphp:
+$hasher = new \LPhenom\Auth\Hashing\CompatPasswordHasher(10000);
+// Остальная конфигурация не меняется.
+```
+
+Для автоматического перехеша UserProvider должен реализовывать
+`PasswordHashUpdaterInterface`:
+
+```php
+use LPhenom\Auth\Contracts\PasswordHashUpdaterInterface;
+use LPhenom\Auth\Contracts\UserProviderInterface;
+
+class MyUserProvider implements UserProviderInterface, PasswordHashUpdaterInterface
+{
+    public function updateAuthPasswordHash(string $userId, string $newHash): void
+    {
+        // UPDATE users SET password_hash = $newHash WHERE id = $userId
+        $this->db->execute('UPDATE users SET password_hash = :h WHERE id = :id', [
+            'h'  => $newHash,
+            'id' => $userId,
+        ]);
+    }
+    // ...
 }
 ```
+
+Если UserProvider не реализует `PasswordHashUpdaterInterface` — перехеш
+молча пропускается, пользователь всё равно входит в систему.
+
+---
+
+#### Сценарий: kphp → shared (lphenom остаётся рабочим)
+
+```
+Шаг 1. Переключаете на PHP shared-сборку с CompatPasswordHasher.
+Шаг 2. Пользователи логинятся: verify(lphenom) = ✅ сразу.
+        needsRehash(lphenom) = false — перехеш не нужен.
+Шаг 3. Все пользователи работают без каких-либо действий.
+```
+
+Перехода обратно на bcrypt не требуется — `CompatPasswordHasher`
+отлично работает с lphenom-хешами в shared-режиме.
+
+---
+
+#### Сводная таблица совместимости
+
+| Сценарий | Хешер | verify bcrypt | verify lphenom | hash() формат |
+|---|---|:---:|:---:|---|
+| shared (базовый) | `BcryptPasswordHasher` | ✅ | ❌ | bcrypt |
+| kphp (базовый) | `CryptPasswordHasher` | ❌ | ✅ | lphenom |
+| **migration** | **`CompatPasswordHasher`** | **✅** | **✅** | **lphenom** |
 
 ---
 
@@ -381,8 +452,20 @@ if ($mode === 'kphp') {
         fromEmail: $_ENV['EMAIL_FROM'],
         subject:   $_ENV['EMAIL_SUBJECT'] ?? 'Ваш код подтверждения'
     );
+} elseif ($mode === 'compat') {
+    // Переходный режим (shared→kphp или kphp→shared):
+    // CompatPasswordHasher верифицирует ОБА формата, хеширует в lphenom.
+    $passwordHasher = new \LPhenom\Auth\Hashing\CompatPasswordHasher(
+        iterations: (int)($_ENV['CRYPT_ITERATIONS'] ?? 10000)
+    );
+    $emailSender = new \LPhenom\Auth\Support\EmailSender\SmtpEmailSender(
+        host: $_ENV['SMTP_HOST'], port: (int)$_ENV['SMTP_PORT'],
+        username: $_ENV['SMTP_USER'], password: $_ENV['SMTP_PASS'],
+        fromEmail: $_ENV['EMAIL_FROM'], fromName: $_ENV['EMAIL_FROM_NAME'],
+        encryption: $_ENV['SMTP_ENCRYPTION'] ?? 'tls'
+    );
 } else {
-    // Shared-реализации:
+    // Shared-реализации (чистый PHP, без миграции):
     $passwordHasher = new \LPhenom\Auth\Hashing\BcryptPasswordHasher(
         cost: (int)($_ENV['BCRYPT_COST'] ?? 10)
     );
@@ -531,10 +614,15 @@ public function findByTokenId(string $id): ?TokenRecord { ... }
 
 ---
 
-### Нюанс 2: Несовместимость хешей паролей
+### Нюанс 2: Автоматическая миграция хешей паролей через `CompatPasswordHasher`
 
-Уже описана в [§4.1](#41-passwordhasher). Не забудьте: при смене режима
-пользователи должны сбросить пароли.
+При смене режима (shared↔kphp) пользователи **не теряют пароли** при правильном
+использовании `CompatPasswordHasher`. Подробности — в [§4.1](#41-passwordhasher).
+
+Ключевые моменты:
+- `shared → kphp`: используйте `CompatPasswordHasher` перед переходом, он перехеширует bcrypt → lphenom при логине
+- `kphp → shared`: lphenom-хеши немедленно работают через `CompatPasswordHasher`, перехеш не нужен
+- Если UserProvider реализует `PasswordHashUpdaterInterface` — перехеш автоматический (при каждом логине с устаревшим форматом)
 
 ---
 
