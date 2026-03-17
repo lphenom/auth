@@ -7,16 +7,16 @@ namespace LPhenom\Auth\Support\EmailSender;
 use LPhenom\Auth\Contracts\CodeSenderInterface;
 
 /**
- * KPHP-compatible email sender via HTTP API.
+ * HTTP API email sender — sends email verification codes via an HTTP API endpoint.
  *
- * Sends email verification codes through an HTTP API endpoint instead of
- * direct SMTP connection. Used in KPHP builds where fsockopen() and
- * stream_socket_enable_crypto() are not available.
+ * Works identically in both shared (PHP) and kphp (compiled binary) builds.
+ * Uses file_get_contents() + stream_context_create() which are available in both.
  *
  * Compatible APIs (configure $apiUrl accordingly):
- *   - Mailgun:   https://api.mailgun.net/v3/{domain}/messages
- *   - SendGrid:  https://api.sendgrid.com/v3/mail/send
- *   - Any custom HTTP endpoint accepting POST with to/from/subject/text fields
+ *   - Mailgun:    https://api.mailgun.net/v3/{domain}/messages
+ *   - SendGrid:   https://api.sendgrid.com/v3/mail/send
+ *   - Mailersend: https://api.mailersend.com/v1/email
+ *   - Any custom HTTPS POST endpoint accepting to/from/subject/text fields
  *
  * Configuration via constructor:
  *   - apiUrl:    Full URL of the HTTP email API endpoint
@@ -24,12 +24,9 @@ use LPhenom\Auth\Contracts\CodeSenderInterface;
  *   - fromEmail: Sender email address
  *   - subject:   Email subject (default: 'Код подтверждения')
  *
- * KPHP-compatible: uses file_get_contents + stream_context_create,
- * http_build_query, no fsockopen, no Closure.
- *
- * @lphenom-build kphp
+ * @lphenom-build shared,kphp
  */
-final class KphpHttpEmailSender implements CodeSenderInterface
+final class HttpEmailSender implements CodeSenderInterface
 {
     /** @var string */
     private string $apiUrl;
@@ -81,7 +78,7 @@ final class KphpHttpEmailSender implements CodeSenderInterface
 
         $context = stream_context_create($opts);
 
-        $response = false;
+        $response  = false;
         $exception = null;
         try {
             $response = file_get_contents($this->apiUrl, false, $context);

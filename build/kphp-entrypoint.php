@@ -6,15 +6,9 @@
  * KPHP does NOT support Composer PSR-4 autoloading.
  * All source files must be explicitly require_once'd in dependency order.
  *
- * Build targets are indicated by the @lphenom-build annotation in each file:
- *
- *   @lphenom-build shared,kphp  - included in both PHP shared-hosting and KPHP binary builds
- *   @lphenom-build shared       - PHP runtime only (password_hash, fsockopen, etc.)
- *                                 NOT included in this entrypoint
- *   @lphenom-build kphp         - KPHP-only implementation (alternative to shared class)
- *
- * Only @lphenom-build shared,kphp and @lphenom-build kphp files are compiled here.
- * @lphenom-build shared files are EXCLUDED — provide your own or use KPHP alternatives.
+ * All source files are tagged @lphenom-build shared,kphp — every file works
+ * in both PHP shared-hosting (PHAR) and KPHP compiled binary builds.
+ * There are no shared-only or kphp-only files.
  *
  * For the full build-target architecture, see: docs/build-targets.md
  *
@@ -115,13 +109,9 @@ require_once __DIR__ . '/../src/DTO/AuthContext.php';
 require_once __DIR__ . '/../src/Tokens/OpaqueTokenEncoder.php';
 
 // =============================================================================
-// lphenom/auth — Hashing
-//   CryptPasswordHasher   @lphenom-build shared,kphp   ← DEFAULT for both builds
-//                          HMAC-SHA256, DB-compatible shared↔kphp out of the box
-//   BcryptPasswordHasher  @lphenom-build shared        ← EXCLUDED (password_hash not in KPHP)
-//                          Use only when NOT planning to run KPHP
-//   CompatPasswordHasher  @lphenom-build shared        ← EXCLUDED
-//                          Migration helper if BcryptPasswordHasher was used previously
+// lphenom/auth — Hashing (@lphenom-build shared,kphp)
+//   CryptPasswordHasher — iterative HMAC-SHA256, the single unified hasher for
+//   both shared and KPHP builds. DB-compatible out of the box — no migration needed.
 // =============================================================================
 require_once __DIR__ . '/../src/Hashing/CryptPasswordHasher.php';
 
@@ -138,17 +128,16 @@ require_once __DIR__ . '/../src/Support/DbTokenRepository.php';
 require_once __DIR__ . '/../src/Support/HttpAuthBridge.php';
 
 // =============================================================================
-// lphenom/auth — SMS / Email senders
-//   SmtpEmailSender       @lphenom-build shared        ← EXCLUDED (fsockopen not in KPHP)
-//   KphpHttpEmailSender   @lphenom-build kphp          ← INCLUDED (file_get_contents)
-//   MirSmsSender          @lphenom-build shared,kphp   ← INCLUDED (file_get_contents)
-//   SmsCodeAuthenticator  @lphenom-build shared,kphp   ← INCLUDED
-//   EmailCodeAuthenticator@lphenom-build shared,kphp   ← INCLUDED
+// lphenom/auth — SMS / Email senders (@lphenom-build shared,kphp)
+//   HttpEmailSender        ← HTTP API email (file_get_contents, unified)
+//   MirSmsSender           ← SMS via mirsms.ru (file_get_contents, unified)
+//   SmsCodeAuthenticator   ← OTP via SMS
+//   EmailCodeAuthenticator ← OTP via Email
 // =============================================================================
 require_once __DIR__ . '/../src/Support/SmsSender/MirSmsSender.php';
 require_once __DIR__ . '/../src/Support/SmsSender/SmsCodeAuthenticator.php';
 require_once __DIR__ . '/../src/Support/EmailSender/EmailCodeAuthenticator.php';
-require_once __DIR__ . '/../src/Support/EmailSender/KphpHttpEmailSender.php';
+require_once __DIR__ . '/../src/Support/EmailSender/HttpEmailSender.php';
 
 // =============================================================================
 // lphenom/auth — Guards & Middleware (@lphenom-build shared,kphp)
@@ -191,8 +180,8 @@ $cacheThrottle = new \LPhenom\Auth\Support\CacheThrottle($cache);
 $logger = new \LPhenom\Log\Logger\NullLogger('auth');
 $auditListener = new \LPhenom\Auth\Support\LogAuditListener($logger);
 
-// KPHP HTTP email sender (@lphenom-build kphp)
-$emailSender = new \LPhenom\Auth\Support\EmailSender\KphpHttpEmailSender(
+// Unified HTTP email sender (shared,kphp)
+$emailSender = new \LPhenom\Auth\Support\EmailSender\HttpEmailSender(
     'https://api.example.com/send',
     'api-key',
     'noreply@example.com',

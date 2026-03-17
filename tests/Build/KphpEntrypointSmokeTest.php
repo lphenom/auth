@@ -107,8 +107,8 @@ final class KphpEntrypointSmokeTest extends TestCase
             // SMS sender
             'MirSmsSender'                 => ['src/Support/SmsSender/MirSmsSender.php'],
             'SmsCodeAuthenticator'         => ['src/Support/SmsSender/SmsCodeAuthenticator.php'],
-            // Email sender — kphp implementation
-            'KphpHttpEmailSender'          => ['src/Support/EmailSender/KphpHttpEmailSender.php'],
+            // Email sender — unified shared,kphp implementation
+            'HttpEmailSender'              => ['src/Support/EmailSender/HttpEmailSender.php'],
             'EmailCodeAuthenticator'       => ['src/Support/EmailSender/EmailCodeAuthenticator.php'],
             // Guards & Middleware
             'BearerTokenGuard'             => ['src/Guards/BearerTokenGuard.php'],
@@ -134,34 +134,5 @@ final class KphpEntrypointSmokeTest extends TestCase
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Verify @lphenom-build shared files are NOT in the entrypoint
-    // -------------------------------------------------------------------------
-
-    /**
-     * @return array<string, array{string}>
-     */
-    public static function sharedOnlyFilesProvider(): array
-    {
-        return [
-            'BcryptPasswordHasher' => ['src/Hashing/BcryptPasswordHasher.php'],
-            'SmtpEmailSender'      => ['src/Support/EmailSender/SmtpEmailSender.php'],
-            'CompatPasswordHasher' => ['src/Hashing/CompatPasswordHasher.php'],
-        ];
-    }
-
-    /**
-     * @dataProvider sharedOnlyFilesProvider
-     */
-    public function testKphpEntrypointExcludesSharedOnlyFile(string $relativePath): void
-    {
-        $content = file_get_contents($this->entrypoint);
-        self::assertIsString($content);
-        self::assertStringNotContainsString(
-            $relativePath,
-            $content,
-            "kphp-entrypoint.php must NOT include '{$relativePath}' (@lphenom-build shared)"
-        );
-    }
 }
 

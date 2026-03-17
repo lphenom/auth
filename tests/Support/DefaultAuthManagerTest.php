@@ -7,8 +7,6 @@ namespace LPhenom\Auth\Tests\Support;
 use LPhenom\Auth\Contracts\AuthenticatedUserInterface;
 use LPhenom\Auth\Contracts\PasswordHashUpdaterInterface;
 use LPhenom\Auth\Contracts\UserProviderInterface;
-use LPhenom\Auth\Hashing\BcryptPasswordHasher;
-use LPhenom\Auth\Hashing\CompatPasswordHasher;
 use LPhenom\Auth\Hashing\CryptPasswordHasher;
 use LPhenom\Auth\Support\AuthContextStorage;
 use LPhenom\Auth\Support\DefaultAuthManager;
@@ -28,7 +26,7 @@ final class DefaultAuthManagerTest extends TestCase
         AuthContextStorage::reset();
 
         $this->userProvider = new StubUserProvider();
-        $hasher = new BcryptPasswordHasher(4);
+        $hasher = new CryptPasswordHasher(100);
         $encoder = new OpaqueTokenEncoder();
         $this->tokenRepo = new InMemoryTokenRepository();
         $throttle = new MemoryThrottle();
@@ -146,7 +144,7 @@ final class DefaultAuthManagerTest extends TestCase
 
     public function testInactiveUserCannotLogin(): void
     {
-        $hasher = new BcryptPasswordHasher(4);
+        $hasher = new CryptPasswordHasher(100);
         $this->userProvider->addUser(new StubUser(
             '2',
             'inactive@example.com',
@@ -160,22 +158,23 @@ final class DefaultAuthManagerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // Auto-rehash tests (CompatPasswordHasher + PasswordHashUpdaterInterface)
+    // Auto-rehash tests (CryptPasswordHasher iteration count upgrade)
     // -------------------------------------------------------------------------
 
-    public function testRehashTriggeredOnLoginWithBcryptHash(): void
+    public function testRehashTriggeredWhenIterationCountChanged(): void
     {
-        // Simulate shared→kphp migration: user has a bcrypt hash in DB
-        $bcryptHasher = new BcryptPasswordHasher(4);
-        $bcryptHash   = $bcryptHasher->hash('migratepass');
+        // Hash stored with old iteration count (100)
+        $oldHasher = new CryptPasswordHasher(100);
+        $oldHash   = $oldHasher->hash('migratepass');
 
         $provider = new StubUserProviderWithRehash();
-        $provider->addUser(new StubUser('99', 'migrate@example.com', $bcryptHash, [], true));
+        $provider->addUser(new StubUser('99', 'migrate@example.com', $oldHash, [], true));
 
-        $compatHasher = new CompatPasswordHasher(100);
+        // Active hasher uses 200 iterations — needsRehash() returns true for old hash
+        $newHasher = new CryptPasswordHasher(200);
         $manager = new DefaultAuthManager(
             $provider,
-            $compatHasher,
+            $newHasher,
             new OpaqueTokenEncoder(),
             new InMemoryTokenRepository(),
             null,
@@ -187,27 +186,27 @@ final class DefaultAuthManagerTest extends TestCase
 
         $user = $manager->attempt('migrate@example.com', 'migratepass');
 
-        self::assertNotNull($user, 'Login must succeed with bcrypt hash via CompatPasswordHasher');
+        self::assertNotNull($user, 'Login must succeed despite iteration count change');
         self::assertNotNull($provider->getUpdatedHash('99'),
             'updateAuthPasswordHash() must be called when needsRehash() returns true');
 
         $newHash = $provider->getUpdatedHash('99');
         self::assertIsString($newHash);
-        self::assertStringStartsWith('$lphenom$sha256$', $newHash,
-            'Rehashed password must be in lphenom format (kphp-compatible)');
+        self::assertStringStartsWith('$lphenom$sha256$200$', $newHash,
+            'Rehashed password must use the new iteration count');
     }
 
     public function testRehashNotTriggeredForCurrentLphenomHash(): void
     {
-        $compatHasher = new CompatPasswordHasher(100);
-        $lphenomHash  = $compatHasher->hash('alreadymigrated');
+        $hasher = new CryptPasswordHasher(200);
+        $hash   = $hasher->hash('alreadycurrent');
 
         $provider = new StubUserProviderWithRehash();
-        $provider->addUser(new StubUser('88', 'kphp@example.com', $lphenomHash, [], true));
+        $provider->addUser(new StubUser('88', 'current@example.com', $hash, [], true));
 
         $manager = new DefaultAuthManager(
             $provider,
-            $compatHasher,
+            $hasher, // same iteration count → needsRehash() === false
             new OpaqueTokenEncoder(),
             new InMemoryTokenRepository(),
             null,
@@ -217,26 +216,26 @@ final class DefaultAuthManagerTest extends TestCase
             60
         );
 
-        $manager->attempt('kphp@example.com', 'alreadymigrated');
+        $manager->attempt('current@example.com', 'alreadycurrent');
 
         self::assertNull($provider->getUpdatedHash('88'),
-            'updateAuthPasswordHash() must NOT be called when hash is already in lphenom format');
+            'updateAuthPasswordHash() must NOT be called when hash is already current');
     }
 
     public function testRehashSkippedWhenProviderDoesNotImplementUpdater(): void
     {
-        // Provider without PasswordHashUpdaterInterface — rehash silently skipped
-        $bcryptHasher = new BcryptPasswordHasher(4);
-        $bcryptHash   = $bcryptHasher->hash('norehash');
+        // Hash made with old iterations — needsRehash() would return true with new hasher
+        $oldHasher = new CryptPasswordHasher(100);
+        $oldHash   = $oldHasher->hash('norehash');
 
         $this->userProvider->addUser(
-            new StubUser('77', 'norehash@example.com', $bcryptHash, [], true)
+            new StubUser('77', 'norehash@example.com', $oldHash, [], true)
         );
 
-        $compatHasher = new CompatPasswordHasher(100);
+        $newHasher = new CryptPasswordHasher(200);
         $manager = new DefaultAuthManager(
             $this->userProvider,   // StubUserProvider — no PasswordHashUpdaterInterface
-            $compatHasher,
+            $newHasher,
             new OpaqueTokenEncoder(),
             new InMemoryTokenRepository(),
             null,
@@ -246,25 +245,24 @@ final class DefaultAuthManagerTest extends TestCase
             60
         );
 
-        // Must not throw — just silently skip the rehash
+        // Must not throw — silently skip the rehash
         $user = $manager->attempt('norehash@example.com', 'norehash');
         self::assertNotNull($user, 'Login must succeed even when provider does not support rehash');
     }
 
-    public function testKphpToSharedMigration(): void
+    public function testSameHasherWorksBothBuilds(): void
     {
-        // Simulate kphp→shared migration: user has a lphenom hash (from kphp build)
-        $cryptHasher = new CryptPasswordHasher(100);
-        $lphenomHash = $cryptHasher->hash('switchedback');
+        // CryptPasswordHasher is @lphenom-build shared,kphp.
+        // A hash produced in one build must verify in the other — no migration ever needed.
+        $hasher = new CryptPasswordHasher(100);
+        $hash   = $hasher->hash('crossbuild');
 
         $provider = new StubUserProviderWithRehash();
-        $provider->addUser(new StubUser('66', 'back@example.com', $lphenomHash, [], true));
+        $provider->addUser(new StubUser('66', 'cross@example.com', $hash, [], true));
 
-        // Shared build now uses CompatPasswordHasher
-        $compatHasher = new CompatPasswordHasher(100);
         $manager = new DefaultAuthManager(
             $provider,
-            $compatHasher,
+            $hasher,
             new OpaqueTokenEncoder(),
             new InMemoryTokenRepository(),
             null,
@@ -274,12 +272,10 @@ final class DefaultAuthManagerTest extends TestCase
             60
         );
 
-        $user = $manager->attempt('back@example.com', 'switchedback');
-
-        self::assertNotNull($user,
-            'kphp→shared: login must succeed with lphenom hash via CompatPasswordHasher');
+        $user = $manager->attempt('cross@example.com', 'crossbuild');
+        self::assertNotNull($user, 'CryptPasswordHasher hash must verify in any build');
         self::assertNull($provider->getUpdatedHash('66'),
-            'kphp→shared: needsRehash() must be false for current lphenom hash — no DB write');
+            'No rehash needed when iteration count matches');
     }
 }
 
