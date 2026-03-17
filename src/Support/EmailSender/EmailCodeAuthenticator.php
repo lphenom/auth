@@ -11,7 +11,7 @@ use LPhenom\Cache\CacheInterface;
  * Email code authenticator — generates, stores and verifies one-time codes sent via email.
  *
  * Uses lphenom/cache for code storage with TTL.
- * Uses CodeSenderInterface (e.g. SmtpEmailSender) for delivery.
+ * Uses CodeSenderInterface (e.g. UniSenderEmailSender) for delivery.
  *
  * KPHP-compatible: no reflection, no callable.
   * @lphenom-build shared,kphp

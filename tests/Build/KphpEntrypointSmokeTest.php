@@ -107,8 +107,8 @@ final class KphpEntrypointSmokeTest extends TestCase
             // SMS sender
             'MirSmsSender'                 => ['src/Support/SmsSender/MirSmsSender.php'],
             'SmsCodeAuthenticator'         => ['src/Support/SmsSender/SmsCodeAuthenticator.php'],
-            // Email sender — unified shared,kphp implementation
-            'HttpEmailSender'              => ['src/Support/EmailSender/HttpEmailSender.php'],
+            // Email sender — UniSender integration (shared,kphp)
+            'UniSenderEmailSender'         => ['src/Support/EmailSender/UniSenderEmailSender.php'],
             'EmailCodeAuthenticator'       => ['src/Support/EmailSender/EmailCodeAuthenticator.php'],
             // Guards & Middleware
             'BearerTokenGuard'             => ['src/Guards/BearerTokenGuard.php'],

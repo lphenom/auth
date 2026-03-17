@@ -1,4 +1,4 @@
-# Авторизация по SMS (MirSMS) и Email (HTTP API)
+# Авторизация по SMS (MirSMS) и Email (UniSender)
 
 LPhenom Auth поддерживает аутентификацию по одноразовым кодам, отправленным через SMS или Email.
 
@@ -9,7 +9,7 @@ LPhenom Auth поддерживает аутентификацию по одно
 1. Пользователь вводит номер телефона или email.
 2. Система генерирует случайный числовой код.
 3. **Хеш кода** (SHA-256) сохраняется в кеше с TTL.
-4. Код отправляется пользователю через SMS (MirSMS) или Email (SMTP).
+4. Код отправляется пользователю через SMS (MirSMS) или Email (UniSender).
 5. Пользователь вводит код.
 6. Система сравнивает хеш введённого кода с хешем в кеше.
 7. При совпадении — аутентификация успешна. Код удаляется из кеша.
@@ -32,17 +32,14 @@ AUTH_SMS_CODE_LENGTH=6
 AUTH_SMS_CODE_TTL=300
 ```
 
-### Email (SMTP)
+### Email (UniSender)
 
 ```dotenv
-# SMTP настройки
-SMTP_HOST=smtp.yandex.ru
-SMTP_PORT=465
-SMTP_USERNAME=noreply@yourapp.ru
-SMTP_PASSWORD=your_smtp_password
-SMTP_FROM_EMAIL=noreply@yourapp.ru
-SMTP_FROM_NAME=YourApp
-SMTP_ENCRYPTION=ssl
+# UniSender API
+UNISENDER_API_KEY=your_api_key
+UNISENDER_SENDER_EMAIL=noreply@yourapp.ru
+UNISENDER_SENDER_NAME=YourApp
+UNISENDER_SUBJECT=Код подтверждения
 
 # Настройки кода
 AUTH_EMAIL_CODE_LENGTH=6
@@ -117,40 +114,29 @@ if ($valid) {
 
 ---
 
-## Email аутентификация (HTTP API)
+## Email аутентификация (UniSender)
 
 ### Настройка
-
-```dotenv
-# HTTP Email API
-EMAIL_API_URL=https://api.mailgun.net/v3/example.com/messages
-EMAIL_API_KEY=key-xxxxxxxxxxxxxxx
-EMAIL_FROM=noreply@yourapp.ru
-EMAIL_SUBJECT=Ваш код подтверждения
-
-# Настройки кода
-AUTH_EMAIL_CODE_LENGTH=6
-AUTH_EMAIL_CODE_TTL=300
-```
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use LPhenom\Auth\Support\EmailSender\HttpEmailSender;
+use LPhenom\Auth\Support\EmailSender\UniSenderEmailSender;
 use LPhenom\Auth\Support\EmailSender\EmailCodeAuthenticator;
 use LPhenom\Core\EnvLoader\EnvLoader;
 
 $env = new EnvLoader();
 $env->load(__DIR__ . '/.env');
 
-// Создаём HTTP API отправитель (KPHP-совместим: file_get_contents + stream_context_create)
-$emailSender = new HttpEmailSender(
-    $env->get('EMAIL_API_URL', ''),
-    $env->get('EMAIL_API_KEY', ''),
-    $env->get('EMAIL_FROM', 'noreply@yourapp.ru'),
-    $env->get('EMAIL_SUBJECT', 'Ваш код подтверждения')
+// Создаём отправитель через UniSender API
+$emailSender = new UniSenderEmailSender(
+    $env->get('UNISENDER_API_KEY', ''),
+    $env->get('UNISENDER_SENDER_EMAIL', 'noreply@yourapp.ru'),
+    $env->get('UNISENDER_SENDER_NAME', 'YourApp'),
+    $env->get('UNISENDER_SUBJECT', 'Код подтверждения')
+    // 5-й аргумент — $apiUrl — опционален, по умолчанию RU-эндпоинт UniSender
 );
 
 // Создаём аутентификатор кодов
@@ -207,13 +193,13 @@ if ($valid) {
 
 ### Параметры запроса
 
-| Параметр   | Описание                        |
-|------------|--------------------------------|
-| `login`    | Логин аккаунта MirSMS          |
-| `password` | Пароль аккаунта MirSMS         |
-| `sender`   | Зарегистрированное имя отправителя |
-| `phone`    | Номер телефона получателя       |
-| `text`     | Текст сообщения                |
+| Параметр   | Описание                              |
+|------------|---------------------------------------|
+| `login`    | Логин аккаунта MirSMS                 |
+| `password` | Пароль аккаунта MirSMS                |
+| `sender`   | Зарегистрированное имя отправителя    |
+| `phone`    | Номер телефона получателя             |
+| `text`     | Текст сообщения                       |
 
 ### Пример HTTP запроса
 
@@ -221,29 +207,63 @@ if ($valid) {
 POST https://api.mirsms.ru/message/send
 Content-Type: application/x-www-form-urlencoded
 
-login=mylogin&password=mypass&sender=MyApp&phone=79001234567&text=Your+code:+123456
+login=mylogin&password=mypass&sender=MyApp&phone=79001234567&text=123456
 ```
 
 ---
 
-## HTTP Email API
+## UniSender API
 
-`HttpEmailSender` отправляет POST-запрос на произвольный HTTPS-эндпоинт. Это делает его
-совместимым с любым современным email-сервисом, а также с KPHP (где `fsockopen` недоступен).
+`UniSenderEmailSender` использует метод [`sendEmail`](https://www.unisender.com/ru/support/api/partners/sendemail/)
+UniSender API для отправки одного транзакционного письма.
 
-### Совместимые провайдеры
+### Регистрация
 
-| Провайдер | API URL |
-|---|---|
-| Mailgun | `https://api.mailgun.net/v3/<domain>/messages` |
-| SendGrid | `https://api.sendgrid.com/v3/mail/send` |
-| Mailersend | `https://api.mailersend.com/v1/email` |
-| Кастомный эндпоинт | Любой HTTPS POST |
+1. Зарегистрируйтесь на [unisender.com](https://www.unisender.com/)
+2. Получите API-ключ: **Аккаунт → API → Ключ**
+3. Укажите верифицированный email отправителя
 
-> **Примечание:** формат тела запроса зависит от провайдера. `HttpEmailSender`
-> отправляет `application/x-www-form-urlencoded` POST с полями `to`, `from`,
-> `subject`, `text`. Для провайдеров с другим форматом реализуйте `CodeSenderInterface`
-> самостоятельно (см. ниже).
+### API endpoint
+
+По умолчанию: `https://api.unisender.com/ru/api/sendEmail`
+
+Для других локалей передайте 5-й аргумент конструктора:
+
+```php
+$emailSender = new UniSenderEmailSender(
+    $apiKey,
+    $senderEmail,
+    $senderName,
+    $subject,
+    'https://api.unisender.com/en/api/sendEmail' // EN-эндпоинт
+);
+```
+
+### Параметры запроса
+
+| Параметр       | Описание                              |
+|----------------|---------------------------------------|
+| `api_key`      | Ключ API из настроек аккаунта         |
+| `email`        | Email получателя                      |
+| `sender_name`  | Отображаемое имя отправителя          |
+| `sender_email` | Email отправителя (верифицированный)  |
+| `subject`      | Тема письма                           |
+| `body`         | HTML-тело письма                      |
+| `format`       | Формат ответа (`json`)                |
+
+### Формат ответа
+
+Успех:
+```json
+{"result": {"email_id": "abc123"}}
+```
+
+Ошибка:
+```json
+{"error": "invalid_api_key", "code": 3}
+```
+
+`UniSenderEmailSender` считает ответ успешным, если в теле отсутствует ключ `"error"`.
 
 ---
 
@@ -307,11 +327,14 @@ $smsAuth = new SmsCodeAuthenticator(
 
 ## KPHP-совместимость
 
-| Компонент              | Статус |
-|------------------------|--------|
-| `MirSmsSender`         | ✅ `file_get_contents` + stream context |
-| `HttpEmailSender`      | ✅ `file_get_contents` + stream context |
-| `SmsCodeAuthenticator` | ✅ `random_bytes`, `hash('sha256')` |
-| `EmailCodeAuthenticator`| ✅ аналогично SMS |
-| `CodeSenderInterface`  | ✅ простой интерфейс без callable |
+| Компонент               | Статус                                              |
+|-------------------------|-----------------------------------------------------|
+| `MirSmsSender`          | ✅ `@file_get_contents` + stream context            |
+| `UniSenderEmailSender`  | ✅ `@file_get_contents` + stream context            |
+| `SmsCodeAuthenticator`  | ✅ `random_bytes`, `hash('sha256')`                 |
+| `EmailCodeAuthenticator`| ✅ аналогично SMS                                   |
+| `CodeSenderInterface`   | ✅ простой интерфейс без callable                   |
 
+> **Примечание про `@`:** `file_get_contents` на мёртвый сокет эмитит PHP `E_WARNING`
+> **до** того, как выполнение дойдёт до `try/catch`. Оператор `@` подавляет это
+> предупреждение в PHP; в KPHP он является no-op и не влияет на поведение.

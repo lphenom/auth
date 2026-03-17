@@ -74,7 +74,8 @@ final class MirSmsSender implements CodeSenderInterface
 
         $response = false;
         try {
-            $response = file_get_contents($this->apiUrl, false, $context);
+            // @ suppresses E_WARNING on connection failure (no-op in KPHP)
+            $response = @file_get_contents($this->apiUrl, false, $context);
         } catch (\Throwable $e) {
             return false;
         }

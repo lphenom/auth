@@ -129,7 +129,7 @@ require_once __DIR__ . '/../src/Support/HttpAuthBridge.php';
 
 // =============================================================================
 // lphenom/auth — SMS / Email senders (@lphenom-build shared,kphp)
-//   HttpEmailSender        ← HTTP API email (file_get_contents, unified)
+//   UniSenderEmailSender  ← UniSender HTTP API (file_get_contents, unified)
 //   MirSmsSender           ← SMS via mirsms.ru (file_get_contents, unified)
 //   SmsCodeAuthenticator   ← OTP via SMS
 //   EmailCodeAuthenticator ← OTP via Email
@@ -137,7 +137,7 @@ require_once __DIR__ . '/../src/Support/HttpAuthBridge.php';
 require_once __DIR__ . '/../src/Support/SmsSender/MirSmsSender.php';
 require_once __DIR__ . '/../src/Support/SmsSender/SmsCodeAuthenticator.php';
 require_once __DIR__ . '/../src/Support/EmailSender/EmailCodeAuthenticator.php';
-require_once __DIR__ . '/../src/Support/EmailSender/HttpEmailSender.php';
+require_once __DIR__ . '/../src/Support/EmailSender/UniSenderEmailSender.php';
 
 // =============================================================================
 // lphenom/auth — Guards & Middleware (@lphenom-build shared,kphp)
@@ -180,12 +180,11 @@ $cacheThrottle = new \LPhenom\Auth\Support\CacheThrottle($cache);
 $logger = new \LPhenom\Log\Logger\NullLogger('auth');
 $auditListener = new \LPhenom\Auth\Support\LogAuditListener($logger);
 
-// Unified HTTP email sender (shared,kphp)
-$emailSender = new \LPhenom\Auth\Support\EmailSender\HttpEmailSender(
-    'https://api.example.com/send',
-    'api-key',
+// Unified UniSender email sender (shared,kphp)
+$emailSender = new \LPhenom\Auth\Support\EmailSender\UniSenderEmailSender(
+    'test-api-key',
     'noreply@example.com',
-    'Verification Code'
+    'MyApp'
 );
 
 // DTOs

@@ -134,7 +134,7 @@ KPHP-совместимая альтернатива:
 | Интерфейс | Реализация | Аннотация | Почему KPHP-совместима |
 |---|---|---|---|
 | `PasswordHasherInterface` | `CryptPasswordHasher` | **shared,kphp** | `hash_hmac`/`random_bytes`/`bin2hex` — есть в KPHP |
-| `CodeSenderInterface` (email) | `HttpEmailSender` | **shared,kphp** | `file_get_contents` + HTTP context — есть в KPHP |
+| `CodeSenderInterface` (email) | `UniSenderEmailSender` | **shared,kphp** | `file_get_contents` + HTTP context — есть в KPHP |
 | `CodeSenderInterface` (SMS) | `MirSmsSender` | **shared,kphp** | `file_get_contents` + HTTP context — есть в KPHP |
 
 > **Ключевое:** нет разделения на shared-only и kphp-only классы.
@@ -200,23 +200,25 @@ result = h  // 64 hex символа (SHA-256)
 
 ### 5.2 EmailSender
 
-#### `HttpEmailSender` — `@lphenom-build shared,kphp` ✅ ЕДИНСТВЕННАЯ РЕАЛИЗАЦИЯ
+#### `UniSenderEmailSender` — `@lphenom-build shared,kphp` ✅ ЕДИНСТВЕННАЯ РЕАЛИЗАЦИЯ
 
 ```php
-use LPhenom\Auth\Support\EmailSender\HttpEmailSender;
+use LPhenom\Auth\Support\EmailSender\UniSenderEmailSender;
 
-$sender = new HttpEmailSender(
-    'https://api.mailgun.net/v3/example.com/messages',
-    'key-xxxxxxxxxxxxxxx',
-    'noreply@example.com',
-    'Ваш код подтверждения'
+$sender = new UniSenderEmailSender(
+    'your-api-key',                  // UniSender API key
+    'noreply@example.com',           // верифицированный sender email
+    'MyApp',                         // sender name
+    'Ваш код подтверждения'          // тема (опционально)
+    // 5-й аргумент — $apiUrl — опционален, по умолчанию RU-эндпоинт
 );
 $ok = $sender->send('recipient@example.com', '123456');
 ```
 
-POST-запрос через `file_get_contents()` + `stream_context_create()` — KPHP-совместимо.
+POST-запрос через `@file_get_contents()` + `stream_context_create()` — KPHP-совместимо.
+Оператор `@` подавляет PHP `E_WARNING` при сетевой ошибке; в KPHP — no-op.
 
-**Совместимые HTTP Email API:** Mailgun, SendGrid, Mailersend, любой кастомный HTTPS POST.
+Использует метод [`sendEmail`](https://www.unisender.com/ru/support/api/partners/sendemail/) UniSender API.
 
 > **Примечание:** коды подтверждения хранятся в кеше (не в БД), поэтому
 > смена конфигурации email при переходе shared→kphp не влияет на
@@ -245,13 +247,13 @@ $sender = new \LPhenom\Auth\Support\SmsSender\MirSmsSender(
 $ok = $sender->send('+79001234567', '654321');
 ```
 
-### `HttpEmailSender` — отправка email через HTTP API
+### `UniSenderEmailSender` — отправка email через UniSender API
 
 ```php
-$sender = new \LPhenom\Auth\Support\EmailSender\HttpEmailSender(
-    'https://api.mailgun.net/v3/example.com/messages',
-    'key-xxxxxxxxxxxxxxx',
+$sender = new \LPhenom\Auth\Support\EmailSender\UniSenderEmailSender(
+    'your-api-key',
     'noreply@example.com',
+    'MyApp',
     'Ваш код подтверждения'
 );
 $ok = $sender->send('user@example.com', '654321');
@@ -301,11 +303,11 @@ $ctx = \LPhenom\Auth\Support\AuthContextStorage::get();
 $passwordHasher = new \LPhenom\Auth\Hashing\CryptPasswordHasher(
     (int) ($_ENV['CRYPT_ITERATIONS'] ?? 10000)
 );
-$emailSender = new \LPhenom\Auth\Support\EmailSender\HttpEmailSender(
-    $_ENV['EMAIL_API_URL'],
-    $_ENV['EMAIL_API_KEY'],
-    $_ENV['EMAIL_FROM'],
-    $_ENV['EMAIL_SUBJECT'] ?? 'Ваш код'
+$emailSender = new \LPhenom\Auth\Support\EmailSender\UniSenderEmailSender(
+    $_ENV['UNISENDER_API_KEY'],
+    $_ENV['UNISENDER_SENDER_EMAIL'],
+    $_ENV['UNISENDER_SENDER_NAME'],
+    $_ENV['UNISENDER_SUBJECT'] ?? 'Ваш код'
 );
 
 $authManager = new \LPhenom\Auth\Support\DefaultAuthManager(
@@ -335,7 +337,7 @@ $authManager = new \LPhenom\Auth\Support\DefaultAuthManager(
           │          shared,kphp — одинаково в обоих режимах        │
           │                                                          │
           │  CryptPasswordHasher  ← хеш паролей (HMAC-SHA256)       │
-          │  HttpEmailSender      ← email коды (file_get_contents)   │
+          │  UniSenderEmailSender ← email коды (file_get_contents)   │
           │  OpaqueTokenEncoder   ← токены (random_bytes + hash)     │
           │  MirSmsSender, CacheThrottle, DbTokenRepository...       │
           └─────────────────────────────────────────────────────────┘
@@ -414,9 +416,9 @@ $pdo = new PDO('mysql:...');
 
 ---
 
-### Нюанс 3: Email через HTTP API
+### Нюанс 3: Email через UniSender API
 
-`HttpEmailSender` работает через `file_get_contents()` — KPHP-совместимо.
+`UniSenderEmailSender` работает через `@file_get_contents()` — KPHP-совместимо.
 Это единственная реализация для обоих режимов. Никакой смены конфига при
 переходе shared↔kphp не требуется.
 
@@ -424,7 +426,7 @@ $pdo = new PDO('mysql:...');
 
 ### Нюанс 4: Тайм-аут HTTP-запросов в KPHP
 
-`MirSmsSender` и `HttpEmailSender` используют `file_get_contents` с тайм-аутом
+`MirSmsSender` и `UniSenderEmailSender` используют `@file_get_contents` с тайм-аутом
 10 секунд. В KPHP `file_get_contents` блокирует воркер. Используйте быстрые API (< 2 сек).
 
 ---

@@ -2,7 +2,7 @@
 
 **lphenom/auth** — пакет аутентификации для фреймворка LPhenom.
 
-Поддерживает bearer-токены, хеширование паролей, guards, middleware, rate limiting, аудит-логирование, а также авторизацию по SMS (MirSMS) и Email (SMTP) через одноразовые коды.
+Поддерживает bearer-токены, хеширование паролей, guards, middleware, rate limiting, аудит-логирование, а также авторизацию по SMS (MirSMS) и Email (UniSender) через одноразовые коды.
 
 Совместим с **PHP >= 8.1** и **KPHP** (компилируется в статический бинарник).
 
@@ -11,10 +11,10 @@
 ## Возможности
 
 - 🔐 **Bearer Token аутентификация** — opaque-токены (не JWT), хранятся как SHA-256 хеш
-- 🔑 **Хеширование паролей** — bcrypt через `password_hash`/`password_verify`
+- 🔑 **Хеширование паролей** — PBKDF2-HMAC-SHA256 (`CryptPasswordHasher`), KPHP-совместимо
 - 🛡 **Guards и Middleware** — `RequireAuthMiddleware`, `RequireRoleMiddleware`
 - 📱 **SMS авторизация** — интеграция с MirSMS API
-- 📧 **Email авторизация** — отправка кодов через SMTP
+- 📧 **Email авторизация** — отправка кодов через UniSender API
 - 🚦 **Rate limiting** — ограничение попыток логина
 - 📝 **Аудит-логирование** — через lphenom/log
 - 🗄 **DB адаптер** — `DbTokenRepository` через lphenom/db
@@ -79,14 +79,14 @@ final class DbUserProvider implements UserProviderInterface
 ### 3. Настройте AuthManager
 
 ```php
-use LPhenom\Auth\Hashing\BcryptPasswordHasher;
+use LPhenom\Auth\Hashing\CryptPasswordHasher;
 use LPhenom\Auth\Support\DefaultAuthManager;
 use LPhenom\Auth\Support\DbTokenRepository;
 use LPhenom\Auth\Tokens\OpaqueTokenEncoder;
 
 $authManager = new DefaultAuthManager(
     $userProvider,
-    new BcryptPasswordHasher(10),
+    new CryptPasswordHasher(10000),
     new OpaqueTokenEncoder(),
     new DbTokenRepository($db),
     $throttle,   // null если не нужен
@@ -124,13 +124,13 @@ src/
   DTO/                — TokenRecord, IssuedToken, ParsedToken, AuthContext
   Exceptions/         — AuthException, InvalidCredentialsException, ...
   Guards/             — BearerTokenGuard
-  Hashing/            — BcryptPasswordHasher
+  Hashing/            — CryptPasswordHasher
   Middleware/          — RequireAuthMiddleware, RequireRoleMiddleware
   Migrations/         — CreateAuthTokensTable, CreateAuthCodesTable
   Tokens/             — OpaqueTokenEncoder
   Support/            — DefaultAuthManager, DbTokenRepository, ...
     SmsSender/        — MirSmsSender, SmsCodeAuthenticator
-    EmailSender/      — SmtpEmailSender, EmailCodeAuthenticator
+    EmailSender/      — UniSenderEmailSender, EmailCodeAuthenticator
 tests/
 docs/
 build/
@@ -143,7 +143,7 @@ build/
 Пакет поддерживает авторизацию по одноразовым кодам:
 
 - **SMS** через MirSMS API
-- **Email** через SMTP (Yandex, Gmail, Mail.ru и любой SMTP-сервер)
+- **Email** через UniSender API
 
 Подробнее: [docs/sms-email-auth.md](docs/sms-email-auth.md)
 
