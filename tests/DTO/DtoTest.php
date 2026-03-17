@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace LPhenom\Auth\Tests\DTO;
 
-use LPhenom\Auth\DTO\TokenRecord;
+use LPhenom\Auth\DTO\AuthContext;
 use LPhenom\Auth\DTO\IssuedToken;
 use LPhenom\Auth\DTO\ParsedToken;
-use LPhenom\Auth\DTO\AuthContext;
+use LPhenom\Auth\DTO\TokenRecord;
 use PHPUnit\Framework\TestCase;
 
 final class DtoTest extends TestCase
@@ -88,4 +88,3 @@ final class DtoTest extends TestCase
         self::assertSame(['read', 'write'], $ctx->scopes);
     }
 }
-

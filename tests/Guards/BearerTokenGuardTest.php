@@ -36,4 +36,3 @@ final class BearerTokenGuardTest extends TestCase
         self::assertNull($result);
     }
 }
-

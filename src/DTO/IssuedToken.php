@@ -32,4 +32,3 @@ final class IssuedToken
         $this->expiresAt      = $expiresAt;
     }
 }
-

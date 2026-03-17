@@ -18,4 +18,3 @@ interface CodeSenderInterface
      */
     public function send(string $recipient, string $code): bool;
 }
-

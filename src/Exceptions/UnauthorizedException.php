@@ -14,4 +14,3 @@ class UnauthorizedException extends AuthException
         parent::__construct($message, 401);
     }
 }
-

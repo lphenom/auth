@@ -55,4 +55,3 @@ final class RequireRoleMiddleware implements MiddlewareInterface
         return $next->handle($request);
     }
 }
-

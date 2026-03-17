@@ -53,7 +53,7 @@ final class MirSmsSender implements CodeSenderInterface
             'password' => $this->password,
             'sender'   => $this->sender,
             'phone'    => $recipient,
-            'text'     => $message
+            'text'     => $message,
         ];
 
         $postBody = http_build_query($postData);
@@ -63,7 +63,7 @@ final class MirSmsSender implements CodeSenderInterface
             'method'  => 'POST',
             'header'  => 'Content-Type: application/x-www-form-urlencoded',
             'content' => $postBody,
-            'timeout' => '10'
+            'timeout' => '10',
         ];
 
         /** @var array<string, array<string, string>> $opts */
@@ -85,4 +85,3 @@ final class MirSmsSender implements CodeSenderInterface
         return true;
     }
 }
-

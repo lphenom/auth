@@ -14,4 +14,3 @@ class InvalidCredentialsException extends AuthException
         parent::__construct($message, 401);
     }
 }
-

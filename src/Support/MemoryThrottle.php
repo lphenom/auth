@@ -40,4 +40,3 @@ final class MemoryThrottle implements LoginThrottleInterface
         unset($this->attempts[$key]);
     }
 }
-

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LPhenom\Auth\Middleware;
 
 use LPhenom\Auth\Guards\BearerTokenGuard;
-use LPhenom\Auth\Support\AuthContextStorage;
 use LPhenom\Http\MiddlewareInterface;
 use LPhenom\Http\Next;
 use LPhenom\Http\Request;
@@ -42,4 +41,3 @@ final class RequireAuthMiddleware implements MiddlewareInterface
         return $next->handle($request);
     }
 }
-

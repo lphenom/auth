@@ -247,4 +247,3 @@ final class StubUserProvider implements UserProviderInterface
         return $this->byLogin[$login] ?? null;
     }
 }
-

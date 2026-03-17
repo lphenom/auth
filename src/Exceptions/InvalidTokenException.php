@@ -14,4 +14,3 @@ class InvalidTokenException extends AuthException
         parent::__construct($message, 401);
     }
 }
-

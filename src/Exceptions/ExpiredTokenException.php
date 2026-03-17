@@ -14,4 +14,3 @@ class ExpiredTokenException extends AuthException
         parent::__construct($message, 401);
     }
 }
-

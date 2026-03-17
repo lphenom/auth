@@ -38,4 +38,3 @@ final class BcryptPasswordHasherTest extends TestCase
         self::assertFalse($hasherLow->needsRehash($hash));
     }
 }
-

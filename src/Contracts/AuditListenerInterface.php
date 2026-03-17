@@ -36,4 +36,3 @@ interface AuditListenerInterface
      */
     public function onInvalidBearerAttempt(string $reason): void;
 }
-

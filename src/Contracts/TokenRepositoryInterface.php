@@ -35,4 +35,3 @@ interface TokenRepositoryInterface
      */
     public function revokeAllForUser(string $userId): void;
 }
-

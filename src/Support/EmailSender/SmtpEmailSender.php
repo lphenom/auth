@@ -195,4 +195,3 @@ final class SmtpEmailSender implements CodeSenderInterface
         return $response;
     }
 }
-

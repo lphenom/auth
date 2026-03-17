@@ -42,5 +42,3 @@ final class BcryptPasswordHasher implements PasswordHasherInterface
         return password_needs_rehash($hash, PASSWORD_BCRYPT, $options);
     }
 }
-
-

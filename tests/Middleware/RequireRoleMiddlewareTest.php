@@ -9,7 +9,6 @@ use LPhenom\Auth\Middleware\RequireRoleMiddleware;
 use LPhenom\Auth\Support\AuthContextStorage;
 use LPhenom\Http\Next;
 use LPhenom\Http\Request;
-use LPhenom\Http\Response;
 use PHPUnit\Framework\TestCase;
 
 final class RequireRoleMiddlewareTest extends TestCase
@@ -61,4 +60,3 @@ final class RequireRoleMiddlewareTest extends TestCase
         self::assertSame(200, $response->getStatus());
     }
 }
-

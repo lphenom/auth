@@ -97,5 +97,3 @@ final class EmailCodeAuthenticator
         return 'auth_email_code:' . $email;
     }
 }
-
-

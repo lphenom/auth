@@ -26,4 +26,3 @@ interface LoginThrottleInterface
      */
     public function reset(string $key): void;
 }
-

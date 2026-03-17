@@ -47,4 +47,3 @@ final class CacheThrottle implements LoginThrottleInterface
         $this->cache->delete($cacheKey);
     }
 }
-

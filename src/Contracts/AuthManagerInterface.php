@@ -38,4 +38,3 @@ interface AuthManagerInterface
      */
     public function logoutToken(string $plainBearerToken): void;
 }
-

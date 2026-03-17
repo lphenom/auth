@@ -35,4 +35,3 @@ final class AuthContext
         $this->scopes  = $scopes;
     }
 }
-

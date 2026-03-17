@@ -14,4 +14,3 @@ class ForbiddenException extends AuthException
         parent::__construct($message, 403);
     }
 }
-

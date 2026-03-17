@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Auth\Tests\Support;
 
-use LPhenom\Auth\Support\InMemoryTokenRepository;
 use LPhenom\Auth\DTO\TokenRecord;
+use LPhenom\Auth\Support\InMemoryTokenRepository;
 use PHPUnit\Framework\TestCase;
 
 final class InMemoryTokenRepositoryTest extends TestCase
@@ -83,4 +83,3 @@ final class InMemoryTokenRepositoryTest extends TestCase
         self::assertFalse($found3->isRevoked());
     }
 }
-

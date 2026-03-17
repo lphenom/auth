@@ -45,4 +45,3 @@ final class AuthContextStorage
         self::$context = null;
     }
 }
-

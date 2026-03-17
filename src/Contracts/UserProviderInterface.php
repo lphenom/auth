@@ -23,4 +23,3 @@ interface UserProviderInterface
      */
     public function findByLogin(string $login): ?AuthenticatedUserInterface;
 }
-

@@ -15,9 +15,6 @@ use LPhenom\Auth\Contracts\UserProviderInterface;
 use LPhenom\Auth\DTO\AuthContext;
 use LPhenom\Auth\DTO\IssuedToken;
 use LPhenom\Auth\DTO\TokenRecord;
-use LPhenom\Auth\Exceptions\ExpiredTokenException;
-use LPhenom\Auth\Exceptions\InvalidTokenException;
-use LPhenom\Auth\Exceptions\RevokedTokenException;
 
 /**
  * Default auth manager implementation.
@@ -263,6 +260,3 @@ final class DefaultAuthManager implements AuthManagerInterface
         }
     }
 }
-
-
-

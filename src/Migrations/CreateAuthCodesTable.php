@@ -41,4 +41,3 @@ final class CreateAuthCodesTable implements MigrationInterface
         return '20260317000002';
     }
 }
-

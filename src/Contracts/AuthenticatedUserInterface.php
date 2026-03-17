@@ -35,4 +35,3 @@ interface AuthenticatedUserInterface
      */
     public function isActive(): bool;
 }
-

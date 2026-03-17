@@ -32,4 +32,3 @@ final class BearerTokenGuard
         return $this->authManager->authenticateBearer($header);
     }
 }
-

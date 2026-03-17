@@ -73,4 +73,3 @@ final class OpaqueTokenEncoderTest extends TestCase
         self::assertNotSame($t1->tokenId, $t2->tokenId);
     }
 }
-

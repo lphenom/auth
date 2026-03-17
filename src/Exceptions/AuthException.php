@@ -14,4 +14,3 @@ use LPhenom\Core\Exception\LPhenomException;
 class AuthException extends LPhenomException
 {
 }
-

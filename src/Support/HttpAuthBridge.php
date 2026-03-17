@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace LPhenom\Auth\Support;
 
-use LPhenom\Auth\Contracts\AuthManagerInterface;
 use LPhenom\Auth\DTO\AuthContext;
 use LPhenom\Auth\Guards\BearerTokenGuard;
 use LPhenom\Http\Request;
@@ -44,4 +43,3 @@ final class HttpAuthBridge
         return AuthContextStorage::get();
     }
 }
-

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Auth\Tests\Support;
 
-use LPhenom\Auth\Support\AuthContextStorage;
 use LPhenom\Auth\DTO\AuthContext;
+use LPhenom\Auth\Support\AuthContextStorage;
 use PHPUnit\Framework\TestCase;
 
 final class AuthContextStorageTest extends TestCase
@@ -45,4 +45,3 @@ final class AuthContextStorageTest extends TestCase
         self::assertNull(AuthContextStorage::get());
     }
 }
-

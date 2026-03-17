@@ -60,7 +60,3 @@ final class OpaqueTokenEncoder implements TokenEncoderInterface
         return hash('sha256', $plainSecret);
     }
 }
-
-
-
-

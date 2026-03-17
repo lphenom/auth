@@ -43,4 +43,3 @@ final class CreateAuthTokensTable implements MigrationInterface
         return '20260317000001';
     }
 }
-

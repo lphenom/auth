@@ -68,4 +68,3 @@ final class TokenRecord
         return $now > $exp;
     }
 }
-

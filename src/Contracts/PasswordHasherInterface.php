@@ -26,4 +26,3 @@ interface PasswordHasherInterface
      */
     public function needsRehash(string $hash): bool;
 }
-

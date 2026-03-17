@@ -8,3 +8,4 @@
 *.phar
 /kphp-out/
 
+.php-cs-fixer.cache

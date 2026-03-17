@@ -141,4 +141,3 @@ final class StubHandler implements HandlerInterface
         return Response::text('ok');
     }
 }
-

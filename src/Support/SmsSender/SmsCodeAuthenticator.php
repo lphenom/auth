@@ -99,5 +99,3 @@ final class SmsCodeAuthenticator
         return 'auth_sms_code:' . $phone;
     }
 }
-
-

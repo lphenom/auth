@@ -71,4 +71,3 @@ final class InMemoryTokenRepository implements TokenRepositoryInterface
         $this->tokens = $updated;
     }
 }
-

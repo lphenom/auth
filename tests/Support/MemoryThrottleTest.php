@@ -49,4 +49,3 @@ final class MemoryThrottleTest extends TestCase
         self::assertFalse($throttle->tooManyAttempts('key2', 3));
     }
 }
-

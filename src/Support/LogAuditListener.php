@@ -49,4 +49,3 @@ final class LogAuditListener implements AuditListenerInterface
         $this->logger->warning('auth.bearer.invalid', ['reason' => $reason]);
     }
 }
-

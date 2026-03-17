@@ -39,4 +39,3 @@ interface TokenEncoderInterface
      */
     public function hashToken(string $plainSecret): string;
 }
-
