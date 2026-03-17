@@ -6,6 +6,7 @@ namespace LPhenom\Auth\Exceptions;
 
 /**
  * Thrown when bearer token has expired.
+  * @lphenom-build shared,kphp
  */
 class ExpiredTokenException extends AuthException
 {

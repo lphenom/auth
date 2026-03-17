@@ -6,6 +6,7 @@ namespace LPhenom\Auth\Exceptions;
 
 /**
  * Thrown when bearer token has been revoked.
+  * @lphenom-build shared,kphp
  */
 class RevokedTokenException extends AuthException
 {

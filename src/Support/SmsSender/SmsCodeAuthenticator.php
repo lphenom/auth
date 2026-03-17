@@ -14,6 +14,7 @@ use LPhenom\Cache\CacheInterface;
  * Uses CodeSenderInterface (e.g. MirSmsSender) for delivery.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class SmsCodeAuthenticator
 {

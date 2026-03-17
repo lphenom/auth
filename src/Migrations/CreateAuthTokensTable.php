@@ -11,6 +11,7 @@ use LPhenom\Db\Migration\MigrationInterface;
  * Migration: create auth_tokens table.
  *
  * KPHP-compatible: no reflection, raw SQL.
+  * @lphenom-build shared,kphp
  */
 final class CreateAuthTokensTable implements MigrationInterface
 {

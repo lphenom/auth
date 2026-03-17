@@ -12,6 +12,7 @@ use LPhenom\Auth\DTO\TokenRecord;
  * Stores token hashes — never plaintext tokens.
  *
  * KPHP-compatible: no reflection, no ORM.
+  * @lphenom-build shared,kphp
  */
 interface TokenRepositoryInterface
 {

@@ -10,6 +10,7 @@ namespace LPhenom\Auth\Contracts;
  * The application must provide its own implementation (e.g. via DB query).
  *
  * KPHP-compatible: no reflection, no ORM.
+  * @lphenom-build shared,kphp
  */
 interface UserProviderInterface
 {

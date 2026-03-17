@@ -10,6 +10,7 @@ use LPhenom\Auth\DTO\IssuedToken;
  * Auth manager contract — main entry point for authentication operations.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 interface AuthManagerInterface
 {

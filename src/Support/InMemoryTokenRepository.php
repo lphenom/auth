@@ -11,6 +11,7 @@ use LPhenom\Auth\DTO\TokenRecord;
  * In-memory token repository — for testing.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class InMemoryTokenRepository implements TokenRepositoryInterface
 {

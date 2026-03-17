@@ -8,6 +8,7 @@ namespace LPhenom\Auth\Contracts;
  * Login throttle (rate limiting) contract.
  *
  * KPHP-compatible: no callable, no reflection.
+  * @lphenom-build shared,kphp
  */
 interface LoginThrottleInterface
 {

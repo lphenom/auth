@@ -16,6 +16,7 @@ use LPhenom\Auth\Contracts\CodeSenderInterface;
  *   - sender: Sender name registered in MirSMS
  *
  * KPHP-compatible: uses file_get_contents with stream context.
+  * @lphenom-build shared,kphp
  */
 final class MirSmsSender implements CodeSenderInterface
 {

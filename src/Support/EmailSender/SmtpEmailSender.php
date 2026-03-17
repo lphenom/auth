@@ -19,6 +19,7 @@ use LPhenom\Auth\Contracts\CodeSenderInterface;
  *   - encryption: 'tls', 'ssl' or '' (none)
  *
  * KPHP-compatible: uses fsockopen for SMTP connection, no PHPMailer.
+  * @lphenom-build shared
  */
 final class SmtpEmailSender implements CodeSenderInterface
 {

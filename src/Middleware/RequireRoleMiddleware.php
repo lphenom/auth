@@ -17,6 +17,7 @@ use LPhenom\Http\Response;
  * Must be placed AFTER RequireAuthMiddleware in the pipeline.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class RequireRoleMiddleware implements MiddlewareInterface
 {

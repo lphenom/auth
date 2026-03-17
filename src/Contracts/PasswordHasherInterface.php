@@ -8,6 +8,7 @@ namespace LPhenom\Auth\Contracts;
  * Password hashing contract.
  *
  * KPHP-compatible: uses native password_hash/password_verify.
+  * @lphenom-build shared,kphp
  */
 interface PasswordHasherInterface
 {

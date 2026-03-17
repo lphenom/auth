@@ -8,6 +8,7 @@ namespace LPhenom\Auth\Contracts;
  * Code sender interface for SMS/Email one-time code authentication.
  *
  * KPHP-compatible: no callable, no reflection.
+  * @lphenom-build shared,kphp
  */
 interface CodeSenderInterface
 {

@@ -18,6 +18,7 @@ use LPhenom\Auth\DTO\ParsedToken;
  * Only the SHA-256 hash of the secret is stored — never the plaintext.
  *
  * KPHP-compatible: no reflection, no JWT, uses random_bytes + hash.
+  * @lphenom-build shared,kphp
  */
 final class OpaqueTokenEncoder implements TokenEncoderInterface
 {

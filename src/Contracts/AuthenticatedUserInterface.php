@@ -10,6 +10,7 @@ namespace LPhenom\Auth\Contracts;
  * The application's User model must implement this interface.
  *
  * KPHP-compatible: no union types (all IDs are string), no reflection.
+  * @lphenom-build shared,kphp
  */
 interface AuthenticatedUserInterface
 {

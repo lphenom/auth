@@ -14,6 +14,7 @@ use LPhenom\Http\Request;
  * Convenience class to authenticate a request and store context in one call.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class HttpAuthBridge
 {

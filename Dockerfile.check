@@ -35,9 +35,17 @@ RUN apt-get update -qq \
 
 WORKDIR /build
 
-# Copy only the source files needed for compilation
-COPY src/    ./src/
-COPY build/  ./build/
+# Copy only the source files needed for compilation.
+# All @lphenom-build shared,kphp and @lphenom-build kphp files are compiled.
+# @lphenom-build shared files are excluded (password_hash, fsockopen, PDO not in KPHP).
+# Vendor lphenom/* packages are included since they are all KPHP-compatible.
+COPY src/                                ./src/
+COPY build/                              ./build/
+COPY vendor/lphenom/core/src/            ./vendor/lphenom/core/src/
+COPY vendor/lphenom/db/src/              ./vendor/lphenom/db/src/
+COPY vendor/lphenom/cache/src/           ./vendor/lphenom/cache/src/
+COPY vendor/lphenom/log/src/             ./vendor/lphenom/log/src/
+COPY vendor/lphenom/http/src/            ./vendor/lphenom/http/src/
 
 # Compile to binary.
 RUN kphp \

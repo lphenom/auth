@@ -10,6 +10,7 @@ use LPhenom\Auth\Contracts\LoginThrottleInterface;
  * In-memory login throttle — for testing and single-request lifetime.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class MemoryThrottle implements LoginThrottleInterface
 {

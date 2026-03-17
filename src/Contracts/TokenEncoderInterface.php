@@ -16,6 +16,7 @@ use LPhenom\Auth\DTO\ParsedToken;
  * - Hashing token secrets for storage
  *
  * KPHP-compatible: no reflection, no JWT.
+  * @lphenom-build shared,kphp
  */
 interface TokenEncoderInterface
 {

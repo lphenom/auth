@@ -12,6 +12,7 @@ use LPhenom\Http\Request;
  * Bearer token guard — extracts and validates bearer token from HTTP request.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class BearerTokenGuard
 {

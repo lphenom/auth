@@ -16,6 +16,7 @@ use LPhenom\Http\Response;
  * Returns 401 if no valid token is provided.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class RequireAuthMiddleware implements MiddlewareInterface
 {

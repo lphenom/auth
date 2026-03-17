@@ -10,6 +10,7 @@ namespace LPhenom\Auth\DTO;
  * Contains the plaintext token (shown once) and metadata.
  *
  * KPHP-compatible: no constructor property promotion, no readonly.
+  * @lphenom-build shared,kphp
  */
 final class IssuedToken
 {

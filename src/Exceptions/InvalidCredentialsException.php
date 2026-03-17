@@ -6,6 +6,7 @@ namespace LPhenom\Auth\Exceptions;
 
 /**
  * Thrown when login credentials are invalid.
+  * @lphenom-build shared,kphp
  */
 class InvalidCredentialsException extends AuthException
 {

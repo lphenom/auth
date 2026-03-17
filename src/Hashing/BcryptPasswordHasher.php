@@ -10,6 +10,7 @@ use LPhenom\Auth\Contracts\PasswordHasherInterface;
  * Bcrypt password hasher using native password_hash/password_verify.
  *
  * KPHP-compatible: no reflection, uses only native functions.
+  * @lphenom-build shared
  */
 final class BcryptPasswordHasher implements PasswordHasherInterface
 {

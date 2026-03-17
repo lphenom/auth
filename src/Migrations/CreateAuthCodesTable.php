@@ -11,6 +11,7 @@ use LPhenom\Db\Migration\MigrationInterface;
  * Migration: create auth_codes table for SMS/email one-time codes.
  *
  * KPHP-compatible: no reflection, raw SQL.
+  * @lphenom-build shared,kphp
  */
 final class CreateAuthCodesTable implements MigrationInterface
 {

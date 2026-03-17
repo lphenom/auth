@@ -10,6 +10,7 @@ use LPhenom\Auth\Contracts\AuthenticatedUserInterface;
  * Auth context — holds the current authenticated user and token info for a request.
  *
  * KPHP-compatible: no constructor property promotion, no readonly.
+  * @lphenom-build shared,kphp
  */
 final class AuthContext
 {

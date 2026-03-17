@@ -15,6 +15,7 @@ use LPhenom\Db\Param\Param;
  * Stores token records in the `auth_tokens` table.
  *
  * KPHP-compatible: no reflection, no ORM, raw SQL only.
+  * @lphenom-build shared,kphp
  */
 final class DbTokenRepository implements TokenRepositoryInterface
 {

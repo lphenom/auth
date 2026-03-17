@@ -8,6 +8,7 @@ namespace LPhenom\Auth\Contracts;
  * Audit listener interface for auth events.
  *
  * KPHP-compatible: explicit interface instead of callable hooks.
+  * @lphenom-build shared,kphp
  */
 interface AuditListenerInterface
 {

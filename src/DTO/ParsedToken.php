@@ -8,6 +8,7 @@ namespace LPhenom\Auth\DTO;
  * Parsed bearer token — result of parsing "tokenId.secret".
  *
  * KPHP-compatible: no constructor property promotion, no readonly.
+  * @lphenom-build shared,kphp
  */
 final class ParsedToken
 {

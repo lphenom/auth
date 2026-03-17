@@ -13,6 +13,7 @@ use LPhenom\Log\Contract\LoggerInterface;
  * Never logs plaintext passwords or tokens.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class LogAuditListener implements AuditListenerInterface
 {

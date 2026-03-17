@@ -22,6 +22,7 @@ use LPhenom\Auth\DTO\TokenRecord;
  * Orchestrates login, token issuing, bearer authentication, and logout.
  *
  * KPHP-compatible: no reflection, no callable, no match, no union types.
+  * @lphenom-build shared,kphp
  */
 final class DefaultAuthManager implements AuthManagerInterface
 {

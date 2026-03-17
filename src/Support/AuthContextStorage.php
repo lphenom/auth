@@ -15,6 +15,7 @@ use LPhenom\Auth\DTO\AuthContext;
  * Call reset() at the beginning of each request in compiled mode.
  *
  * KPHP-compatible: no reflection, no global magic.
+  * @lphenom-build shared,kphp
  */
 final class AuthContextStorage
 {

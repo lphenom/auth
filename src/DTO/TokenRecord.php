@@ -8,6 +8,7 @@ namespace LPhenom\Auth\DTO;
  * Token record stored in the database.
  *
  * KPHP-compatible: no constructor property promotion, no readonly.
+  * @lphenom-build shared,kphp
  */
 final class TokenRecord
 {

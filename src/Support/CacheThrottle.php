@@ -13,6 +13,7 @@ use LPhenom\Cache\CacheInterface;
  * Uses lphenom/cache to track failed login attempts.
  *
  * KPHP-compatible: no reflection, no callable.
+  * @lphenom-build shared,kphp
  */
 final class CacheThrottle implements LoginThrottleInterface
 {
