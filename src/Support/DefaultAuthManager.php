@@ -118,8 +118,12 @@ final class DefaultAuthManager implements AuthManagerInterface
         // PasswordHashUpdaterInterface; silently skipped otherwise.
         if ($this->hasher->needsRehash($passwordHash)) {
             if ($this->userProvider instanceof PasswordHashUpdaterInterface) {
+                // Assign to a typed variable so KPHP can resolve updateAuthPasswordHash().
+                // KPHP does not narrow $this->userProvider from instanceof checks.
+                /** @var PasswordHashUpdaterInterface $updater */
+                $updater = $this->userProvider;
                 $newHash = $this->hasher->hash($password);
-                $this->userProvider->updateAuthPasswordHash(
+                $updater->updateAuthPasswordHash(
                     $user->getAuthIdentifier(),
                     $newHash
                 );

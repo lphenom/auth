@@ -56,9 +56,9 @@ final class CryptPasswordHasher implements PasswordHasherInterface
             return false;
         }
 
-        $iter = (int) $parts[3];
-        $salt = $parts[4];
-        $expected = $parts[5];
+        $iter     = (int) $parts[3];
+        $salt     = (string) $parts[4];
+        $expected = (string) $parts[5];
 
         if ($iter < 1 || $salt === '' || $expected === '') {
             return false;

@@ -15,8 +15,10 @@ use LPhenom\Auth\Contracts\CodeSenderInterface;
  *   - password: MirSMS account password
  *   - sender: Sender name registered in MirSMS
  *
- * KPHP-compatible: uses file_get_contents with stream context.
-  * @lphenom-build shared,kphp
+ * KPHP-compatible: uses curl_* for HTTP POST (file_get_contents with context
+ * is not supported in KPHP — it only accepts 1 argument).
+ *
+ * @lphenom-build shared,kphp
  */
 final class MirSmsSender implements CodeSenderInterface
 {
@@ -46,41 +48,31 @@ final class MirSmsSender implements CodeSenderInterface
 
     public function send(string $recipient, string $code): bool
     {
-        $message = $code;
-
         /** @var array<string, string> $postData */
         $postData = [
             'login'    => $this->login,
             'password' => $this->password,
             'sender'   => $this->sender,
             'phone'    => $recipient,
-            'text'     => $message,
+            'text'     => $code,
         ];
 
         $postBody = http_build_query($postData);
 
-        /** @var array<string, string> $httpOpts */
-        $httpOpts = [
-            'method'  => 'POST',
-            'header'  => 'Content-Type: application/x-www-form-urlencoded',
-            'content' => $postBody,
-            'timeout' => '10',
-        ];
+        $ch = curl_init($this->apiUrl);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postBody);
+        /** @var string[] $headers */
+        $headers = ['Content-Type: application/x-www-form-urlencoded'];
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-        /** @var array<string, array<string, string>> $opts */
-        $opts = ['http' => $httpOpts];
+        $response = curl_exec($ch);
+        $errno    = curl_errno($ch);
+        curl_close($ch);
 
-        $context = stream_context_create($opts);
-
-        $response = false;
-        try {
-            // @ suppresses E_WARNING on connection failure (no-op in KPHP)
-            $response = @file_get_contents($this->apiUrl, false, $context);
-        } catch (\Throwable $e) {
-            return false;
-        }
-
-        if ($response === false) {
+        if ($errno !== 0 || $response === false) {
             return false;
         }
 

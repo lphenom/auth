@@ -69,6 +69,9 @@ require_once __DIR__ . '/../vendor/lphenom/http/src/Response.php';
 require_once __DIR__ . '/../vendor/lphenom/http/src/RouteMatch.php';
 require_once __DIR__ . '/../vendor/lphenom/http/src/MiddlewareInterface.php';
 require_once __DIR__ . '/../vendor/lphenom/http/src/Next.php';
+// Router must be included: RouterGroupCallback::call(Router $router) references it
+require_once __DIR__ . '/../vendor/lphenom/http/src/Router.php';
+require_once __DIR__ . '/../vendor/lphenom/http/src/MiddlewareStack.php';
 
 // =============================================================================
 // lphenom/auth — Exceptions (@lphenom-build shared,kphp)
