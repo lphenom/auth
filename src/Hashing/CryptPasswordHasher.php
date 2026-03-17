@@ -14,15 +14,17 @@ use LPhenom\Auth\Contracts\PasswordHasherInterface;
  *
  * Hash format: $lphenom$sha256$<iterations>$<salt32hex>$<hash64hex>
  *
- * IMPORTANT — cross-mode compatibility:
- *   Hashes produced by CryptPasswordHasher and BcryptPasswordHasher are NOT
- *   interchangeable. If you run shared mode and KPHP mode against the same
- *   database, users must reset their passwords when switching modes.
- *   See docs/build-targets.md for migration guidance.
+ * IMPORTANT — this is the RECOMMENDED default hasher for BOTH shared and kphp builds.
+ * Using it in both modes means the password database is fully compatible when
+ * migrating from shared PHAR → KPHP binary or back, with zero data loss and
+ * no action required from the end user.
+ *
+ * BcryptPasswordHasher is available as a shared-only alternative for deployments
+ * that explicitly require bcrypt and do NOT plan to run KPHP.
  *
  * KPHP-compatible: uses only hash_hmac(), hash_equals(), random_bytes(), bin2hex().
  *
- * @lphenom-build kphp
+ * @lphenom-build shared,kphp
  */
 final class CryptPasswordHasher implements PasswordHasherInterface
 {

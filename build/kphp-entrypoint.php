@@ -116,8 +116,12 @@ require_once __DIR__ . '/../src/Tokens/OpaqueTokenEncoder.php';
 
 // =============================================================================
 // lphenom/auth — Hashing
+//   CryptPasswordHasher   @lphenom-build shared,kphp   ← DEFAULT for both builds
+//                          HMAC-SHA256, DB-compatible shared↔kphp out of the box
 //   BcryptPasswordHasher  @lphenom-build shared        ← EXCLUDED (password_hash not in KPHP)
-//   CryptPasswordHasher   @lphenom-build kphp          ← INCLUDED (HMAC-SHA256 based)
+//                          Use only when NOT planning to run KPHP
+//   CompatPasswordHasher  @lphenom-build shared        ← EXCLUDED
+//                          Migration helper if BcryptPasswordHasher was used previously
 // =============================================================================
 require_once __DIR__ . '/../src/Hashing/CryptPasswordHasher.php';
 
