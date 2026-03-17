@@ -1,4 +1,4 @@
-# Авторизация по SMS (MirSMS) и Email (SMTP)
+# Авторизация по SMS (MirSMS) и Email (HTTP API)
 
 LPhenom Auth поддерживает аутентификацию по одноразовым кодам, отправленным через SMS или Email.
 
@@ -117,31 +117,40 @@ if ($valid) {
 
 ---
 
-## Email аутентификация (SMTP)
+## Email аутентификация (HTTP API)
 
 ### Настройка
+
+```dotenv
+# HTTP Email API
+EMAIL_API_URL=https://api.mailgun.net/v3/example.com/messages
+EMAIL_API_KEY=key-xxxxxxxxxxxxxxx
+EMAIL_FROM=noreply@yourapp.ru
+EMAIL_SUBJECT=Ваш код подтверждения
+
+# Настройки кода
+AUTH_EMAIL_CODE_LENGTH=6
+AUTH_EMAIL_CODE_TTL=300
+```
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use LPhenom\Auth\Support\EmailSender\SmtpEmailSender;
+use LPhenom\Auth\Support\EmailSender\HttpEmailSender;
 use LPhenom\Auth\Support\EmailSender\EmailCodeAuthenticator;
 use LPhenom\Core\EnvLoader\EnvLoader;
 
 $env = new EnvLoader();
 $env->load(__DIR__ . '/.env');
 
-// Создаём SMTP отправитель
-$emailSender = new SmtpEmailSender(
-    $env->get('SMTP_HOST', 'smtp.yandex.ru'),
-    (int) $env->get('SMTP_PORT', '465'),
-    $env->get('SMTP_USERNAME', ''),
-    $env->get('SMTP_PASSWORD', ''),
-    $env->get('SMTP_FROM_EMAIL', 'noreply@yourapp.ru'),
-    $env->get('SMTP_FROM_NAME', 'YourApp'),
-    $env->get('SMTP_ENCRYPTION', 'ssl')
+// Создаём HTTP API отправитель (KPHP-совместим: file_get_contents + stream_context_create)
+$emailSender = new HttpEmailSender(
+    $env->get('EMAIL_API_URL', ''),
+    $env->get('EMAIL_API_KEY', ''),
+    $env->get('EMAIL_FROM', 'noreply@yourapp.ru'),
+    $env->get('EMAIL_SUBJECT', 'Ваш код подтверждения')
 );
 
 // Создаём аутентификатор кодов
@@ -217,31 +226,24 @@ login=mylogin&password=mypass&sender=MyApp&phone=79001234567&text=Your+code:+123
 
 ---
 
-## SMTP настройки для популярных провайдеров
+## HTTP Email API
 
-### Yandex
+`HttpEmailSender` отправляет POST-запрос на произвольный HTTPS-эндпоинт. Это делает его
+совместимым с любым современным email-сервисом, а также с KPHP (где `fsockopen` недоступен).
 
-```dotenv
-SMTP_HOST=smtp.yandex.ru
-SMTP_PORT=465
-SMTP_ENCRYPTION=ssl
-```
+### Совместимые провайдеры
 
-### Gmail
+| Провайдер | API URL |
+|---|---|
+| Mailgun | `https://api.mailgun.net/v3/<domain>/messages` |
+| SendGrid | `https://api.sendgrid.com/v3/mail/send` |
+| Mailersend | `https://api.mailersend.com/v1/email` |
+| Кастомный эндпоинт | Любой HTTPS POST |
 
-```dotenv
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_ENCRYPTION=tls
-```
-
-### Mail.ru
-
-```dotenv
-SMTP_HOST=smtp.mail.ru
-SMTP_PORT=465
-SMTP_ENCRYPTION=ssl
-```
+> **Примечание:** формат тела запроса зависит от провайдера. `HttpEmailSender`
+> отправляет `application/x-www-form-urlencoded` POST с полями `to`, `from`,
+> `subject`, `text`. Для провайдеров с другим форматом реализуйте `CodeSenderInterface`
+> самостоятельно (см. ниже).
 
 ---
 
@@ -307,8 +309,8 @@ $smsAuth = new SmsCodeAuthenticator(
 
 | Компонент              | Статус |
 |------------------------|--------|
-| `MirSmsSender`         | ✅ использует `file_get_contents` + stream context |
-| `SmtpEmailSender`      | ✅ использует `fsockopen` + ручной SMTP-протокол |
+| `MirSmsSender`         | ✅ `file_get_contents` + stream context |
+| `HttpEmailSender`      | ✅ `file_get_contents` + stream context |
 | `SmsCodeAuthenticator` | ✅ `random_bytes`, `hash('sha256')` |
 | `EmailCodeAuthenticator`| ✅ аналогично SMS |
 | `CodeSenderInterface`  | ✅ простой интерфейс без callable |

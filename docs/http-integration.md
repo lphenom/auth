@@ -133,7 +133,7 @@ final class ProfileHandler implements HandlerInterface
 
 declare(strict_types=1);
 
-use LPhenom\Auth\Hashing\BcryptPasswordHasher;
+use LPhenom\Auth\Hashing\CryptPasswordHasher;
 use LPhenom\Auth\Support\DefaultAuthManager;
 use LPhenom\Auth\Support\InMemoryTokenRepository;
 use LPhenom\Auth\Tokens\OpaqueTokenEncoder;
@@ -148,7 +148,7 @@ use LPhenom\Http\MiddlewareStack;
 // --- Настройка аутентификации ---
 $authManager = new DefaultAuthManager(
     $userProvider,
-    new BcryptPasswordHasher(10),
+    new CryptPasswordHasher(10000),
     new OpaqueTokenEncoder(),
     new InMemoryTokenRepository(),
     null,    // throttle

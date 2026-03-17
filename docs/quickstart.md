@@ -160,7 +160,7 @@ final class DbUserProvider implements UserProviderInterface
 
 declare(strict_types=1);
 
-use LPhenom\Auth\Hashing\BcryptPasswordHasher;
+use LPhenom\Auth\Hashing\CryptPasswordHasher;
 use LPhenom\Auth\Support\DefaultAuthManager;
 use LPhenom\Auth\Support\DbTokenRepository;
 use LPhenom\Auth\Support\LogAuditListener;
@@ -168,7 +168,7 @@ use LPhenom\Auth\Support\CacheThrottle;
 use LPhenom\Auth\Tokens\OpaqueTokenEncoder;
 
 // Зависимости
-$hasher     = new BcryptPasswordHasher(10);
+$hasher     = new CryptPasswordHasher(10000);
 $encoder    = new OpaqueTokenEncoder();
 $tokenRepo  = new DbTokenRepository($dbConnection);
 $throttle   = new CacheThrottle($cache);

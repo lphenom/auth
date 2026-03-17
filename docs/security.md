@@ -8,9 +8,11 @@
 
 ## Хранение паролей
 
-- Пароли хешируются через `password_hash()` с алгоритмом `PASSWORD_BCRYPT`.
-- По умолчанию cost = 10 (настраивается через конструктор `BcryptPasswordHasher`).
-- Поддержка `needsRehash()` — автоматическое обнаружение устаревших хешей.
+- Пароли хешируются через `CryptPasswordHasher` — итеративный HMAC-SHA256 (PBKDF2-подобная схема).
+- Формат хеша: `$lphenom$sha256$<iterations>$<salt32hex>$<hash64hex>`.
+- По умолчанию `iterations = 10000` (настраивается через конструктор `CryptPasswordHasher`).
+- Поддержка `needsRehash()` — обнаруживает хеши с устаревшим числом итераций.
+- KPHP-совместим: использует только `hash_hmac()`, `hash_equals()`, `random_bytes()`, `bin2hex()`.
 
 ## Генерация токенов
 
@@ -87,8 +89,11 @@ $audit = new LogAuditListener($logger);
 
 Все криптографические операции поддерживаются KPHP:
 - `random_bytes()` ✅
-- `password_hash()` / `password_verify()` ✅
+- `hash_hmac('sha256', ...)` ✅
 - `hash('sha256', ...)` ✅
 - `hash_equals()` ✅
 - `bin2hex()` ✅
+
+> `password_hash()` / `password_verify()` в KPHP **отсутствуют** — именно поэтому
+> используется `CryptPasswordHasher` вместо `BcryptPasswordHasher`.
 
