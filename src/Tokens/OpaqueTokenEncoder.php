@@ -30,9 +30,6 @@ final class OpaqueTokenEncoder implements TokenEncoderInterface
 
         $now = new \DateTimeImmutable();
         $expiresAt = $now->modify('+' . $ttlSeconds . ' seconds');
-        if ($expiresAt === false) {
-            $expiresAt = $now;
-        }
         $expiresAtStr = $expiresAt->format('Y-m-d H:i:s');
 
         return new IssuedToken($plainTextToken, $tokenId, $expiresAtStr);
