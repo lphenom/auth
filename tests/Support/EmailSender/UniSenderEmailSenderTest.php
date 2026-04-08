@@ -127,8 +127,11 @@ final class UniSenderEmailSenderTest extends TestCase
             return 0;
         }
         $name = stream_socket_get_name($server, false);
-        $port = (int) substr($name, strrpos($name, ':') + 1);
         fclose($server);
+        if ($name === false) {
+            return 0;
+        }
+        $port = (int) substr($name, strrpos($name, ':') + 1);
 
         $this->serverPort = (int) $port;
 
