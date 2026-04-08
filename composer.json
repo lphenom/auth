@@ -1,7 +1,6 @@
 {
     "name": "lphenom/auth",
     "description": "LPhenom Auth — аутентификация, bearer-токены, guards, middleware (KPHP-совместимый)",
-    "version": "0.1.0",
     "type": "library",
     "license": "MIT",
     "keywords": ["lphenom", "auth", "authentication", "bearer", "token", "kphp"],
