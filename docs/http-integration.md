@@ -8,12 +8,29 @@
 
 Проверяет наличие валидного bearer-токена. Возвращает 401 если токен отсутствует или невалиден.
 
+Второй аргумент конструктора — необязательный список **публичных путей**, которые не требуют аутентификации. Поддерживаются два режима совпадения:
+
+| Запись                   | Тип                        | Пример совпадения                                    |
+|--------------------------|----------------------------|------------------------------------------------------|
+| `/api/v1/auth/login`     | Точное совпадение          | `/api/v1/auth/login` — да; `/api/v1/auth/reg` — нет |
+| `/api/v1/auth/*`         | Префиксный wildcard (`*`)  | `/api/v1/auth/login`, `/api/v1/auth/register` — да  |
+
 ```php
 use LPhenom\Auth\Guards\BearerTokenGuard;
 use LPhenom\Auth\Middleware\RequireAuthMiddleware;
 
 $guard = new BearerTokenGuard($authManager);
+
+// Без исключений — все маршруты защищены
 $authMiddleware = new RequireAuthMiddleware($guard);
+
+// С публичными маршрутами — /api/v1/auth/* пропускается без токена
+$authMiddleware = new RequireAuthMiddleware($guard, [
+    '/api/v1/auth/login',
+    '/api/v1/auth/register',
+    // или через wildcard:
+    // '/api/v1/auth/*',
+]);
 ```
 
 ### RequireRoleMiddleware
@@ -38,24 +55,27 @@ use LPhenom\Auth\Middleware\RequireAuthMiddleware;
 use LPhenom\Auth\Middleware\RequireRoleMiddleware;
 
 $router = new Router();
-$guard = new BearerTokenGuard($authManager);
+$guard  = new BearerTokenGuard($authManager);
 
-// Публичный маршрут — без аутентификации
-$router->post('/api/login', $loginHandler);
+// Публичные маршруты — без аутентификации
+$router->post('/api/v1/auth/login',    $loginHandler);
+$router->post('/api/v1/auth/register', $registerHandler);
 
-// Защищённый маршрут — требуется аутентификация
-$router->get('/api/profile', $profileHandler);
+// Защищённые маршруты
+$router->get('/api/profile',         $profileHandler);
+$router->get('/api/admin/users',     $adminUsersHandler);
 
-// Маршрут с проверкой роли
-$router->get('/api/admin/users', $adminUsersHandler);
-
-// Создаём middleware stack для защищённых маршрутов
+// Глобальный middleware stack с исключениями для публичных путей
 $authStack = new MiddlewareStack();
-$authStack->push(new RequireAuthMiddleware($guard));
+$authStack->push(new RequireAuthMiddleware($guard, [
+    '/api/v1/auth/login',
+    '/api/v1/auth/register',
+    // wildcard-вариант: '/api/v1/auth/*'
+]));
 
-// Для admin-маршрутов
+// Для admin-маршрутов дополнительно проверяем роль
 $adminStack = new MiddlewareStack();
-$adminStack->push(new RequireAuthMiddleware($guard));
+$adminStack->push(new RequireAuthMiddleware($guard, ['/api/v1/auth/*']));
 $adminStack->push(new RequireRoleMiddleware(['admin']));
 ```
 

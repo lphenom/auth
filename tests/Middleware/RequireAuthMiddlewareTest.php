@@ -51,6 +51,67 @@ final class RequireAuthMiddlewareTest extends TestCase
         $response = $middleware->process($request, $next);
         self::assertSame(200, $response->getStatus());
     }
+
+    public function testPublicPathExactMatchBypassesAuth(): void
+    {
+        $authManager = new StubAuthManager(null); // no user — would fail auth
+        $guard = new BearerTokenGuard($authManager);
+        $middleware = new RequireAuthMiddleware($guard, ['/api/v1/auth/login']);
+
+        $request = new Request('POST', '/api/v1/auth/login', [], [], [], '', [], '127.0.0.1');
+        $handler = new StubHandler();
+        $next = new Next([], $handler);
+
+        $response = $middleware->process($request, $next);
+        // Public path — must pass through even without a token
+        self::assertSame(200, $response->getStatus());
+    }
+
+    public function testPublicWildcardBypassesAuth(): void
+    {
+        $authManager = new StubAuthManager(null);
+        $guard = new BearerTokenGuard($authManager);
+        $middleware = new RequireAuthMiddleware($guard, ['/api/v1/auth/*']);
+
+        foreach (['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/refresh'] as $path) {
+            $request = new Request('POST', $path, [], [], [], '', [], '127.0.0.1');
+            $handler = new StubHandler();
+            $next = new Next([], $handler);
+
+            $response = $middleware->process($request, $next);
+            self::assertSame(200, $response->getStatus(), "Expected 200 for public wildcard path: $path");
+        }
+    }
+
+    public function testNonPublicPathStillRequiresAuth(): void
+    {
+        $authManager = new StubAuthManager(null);
+        $guard = new BearerTokenGuard($authManager);
+        $middleware = new RequireAuthMiddleware($guard, ['/api/v1/auth/login']);
+
+        // /api/profile is NOT in the public list
+        $request = new Request('GET', '/api/profile', [], [], [], '', [], '127.0.0.1');
+        $handler = new StubHandler();
+        $next = new Next([], $handler);
+
+        $response = $middleware->process($request, $next);
+        self::assertSame(401, $response->getStatus());
+    }
+
+    public function testPublicPathDoesNotMatchUnrelatedPaths(): void
+    {
+        $authManager = new StubAuthManager(null);
+        $guard = new BearerTokenGuard($authManager);
+        // Only exact '/api/v1/auth/login' is public
+        $middleware = new RequireAuthMiddleware($guard, ['/api/v1/auth/login']);
+
+        $request = new Request('GET', '/api/v1/auth/profile', [], [], [], '', [], '127.0.0.1');
+        $handler = new StubHandler();
+        $next = new Next([], $handler);
+
+        $response = $middleware->process($request, $next);
+        self::assertSame(401, $response->getStatus());
+    }
 }
 
 /**
