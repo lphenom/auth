@@ -329,13 +329,12 @@ $smsAuth = new SmsCodeAuthenticator(
 
 | Компонент               | Статус                                              |
 |-------------------------|-----------------------------------------------------|
-| `MirSmsSender`          | ✅ `curl_*` (KPHP поддерживает `ext-curl`)          |
-| `UniSenderEmailSender`  | ✅ `curl_*` (KPHP поддерживает `ext-curl`)          |
+| `MirSmsSender`          | ✅ `@file_get_contents` + stream context            |
+| `UniSenderEmailSender`  | ✅ `@file_get_contents` + stream context            |
 | `SmsCodeAuthenticator`  | ✅ `random_bytes`, `hash('sha256')`                 |
 | `EmailCodeAuthenticator`| ✅ аналогично SMS                                   |
 | `CodeSenderInterface`   | ✅ простой интерфейс без callable                   |
 
-> **Примечание:** оба отправителя используют `curl_*` вместо
-> `file_get_contents` — в KPHP функция `file_get_contents` принимает только
-> 1 аргумент (URL), передать HTTP-контекст через `stream_context_create`
-> невозможно. `curl_*` поддерживается KPHP полностью.
+> **Примечание про `@`:** `file_get_contents` на мёртвый сокет эмитит PHP `E_WARNING`
+> **до** того, как выполнение дойдёт до `try/catch`. Оператор `@` подавляет это
+> предупреждение в PHP; в KPHP он является no-op и не влияет на поведение.

@@ -84,13 +84,11 @@ KPHP-совместимая альтернатива:
 
 | Функция PHP | Статус в KPHP | Альтернатива |
 |---|---|---|
-| `fsockopen()` | ❌ Отсутствует | `curl_*()` |
+| `fsockopen()` | ❌ Отсутствует | `file_get_contents()` + HTTP context |
 | `stream_socket_enable_crypto()` | ❌ Отсутствует | Использовать HTTPS API |
-| `socket_create()` | ❌ Отсутствует | `curl_*()` |
-| `file_get_contents($url)` (1 аргумент) | ✅ Работает | — |
-| `file_get_contents($url, false, $ctx)` (3 аргумента) | ❌ Не поддерживается | `curl_*()` |
-| `stream_context_create()` | ⚠️ Работает, но не с `file_get_contents` | — |
-| `curl_init()` / `curl_exec()` / `curl_errno()` | ✅ Работает | — |
+| `socket_create()` | ❌ Отсутствует | `file_get_contents()` + HTTP context |
+| `file_get_contents()` с HTTP | ✅ Работает | — |
+| `stream_context_create()` | ✅ Работает | — |
 
 ### База данных
 
@@ -117,11 +115,11 @@ KPHP-совместимая альтернатива:
 
 - `random_bytes()`, `bin2hex()`, `hex2bin()` ✅
 - `hash()`, `hash_hmac()`, `hash_equals()` ✅
-- `file_get_contents($url)` с 1 аргументом ✅ (с `stream_context_create` — ❌)
-- `curl_init()` / `curl_setopt()` / `curl_exec()` / `curl_errno()` ✅
-- `http_build_query()` ✅
+- `file_get_contents()` с HTTP stream context ✅
+- `stream_context_create()` ✅
 - `base64_encode()` / `base64_decode()` ✅
 - `json_encode()` / `json_decode()` ✅
+- `http_build_query()` ✅
 - Интерфейсы и их полиморфизм ✅
 - Статические методы и свойства ✅
 - Nullable типы (`?string`) ✅
@@ -136,8 +134,8 @@ KPHP-совместимая альтернатива:
 | Интерфейс | Реализация | Аннотация | Почему KPHP-совместима |
 |---|---|---|---|
 | `PasswordHasherInterface` | `CryptPasswordHasher` | **shared,kphp** | `hash_hmac`/`random_bytes`/`bin2hex` — есть в KPHP |
-| `CodeSenderInterface` (email) | `UniSenderEmailSender` | **shared,kphp** | `curl_*` — есть в KPHP |
-| `CodeSenderInterface` (SMS) | `MirSmsSender` | **shared,kphp** | `curl_*` — есть в KPHP |
+| `CodeSenderInterface` (email) | `UniSenderEmailSender` | **shared,kphp** | `file_get_contents` + HTTP context — есть в KPHP |
+| `CodeSenderInterface` (SMS) | `MirSmsSender` | **shared,kphp** | `file_get_contents` + HTTP context — есть в KPHP |
 
 > **Ключевое:** нет разделения на shared-only и kphp-only классы.
 > Один код — оба режима.
@@ -155,7 +153,7 @@ KPHP-совместимая альтернатива:
 | `CacheThrottle` | Зависит от `CacheInterface` (KPHP-совместим) |
 | `LogAuditListener` | Зависит от `LoggerInterface` (KPHP-совместим) |
 | `DbTokenRepository` | Зависит от `ConnectionInterface` (реализация через FFI) |
-| `MirSmsSender` | Использует `curl_*` для HTTP POST |
+| `MirSmsSender` | Использует `file_get_contents` + `stream_context_create` |
 | `SmsCodeAuthenticator` | Зависит от `CacheInterface` + `CodeSenderInterface` |
 | `EmailCodeAuthenticator` | Зависит от `CacheInterface` + `CodeSenderInterface` |
 | `HttpAuthBridge` | Зависит только от KPHP-совместимых компонентов |
@@ -217,8 +215,8 @@ $sender = new UniSenderEmailSender(
 $ok = $sender->send('recipient@example.com', '123456');
 ```
 
-POST-запрос через `curl_*` — KPHP-совместимо.
-Ошибки соединения определяются через `curl_errno()` — никаких `E_WARNING`.
+POST-запрос через `@file_get_contents()` + `stream_context_create()` — KPHP-совместимо.
+Оператор `@` подавляет PHP `E_WARNING` при сетевой ошибке; в KPHP — no-op.
 
 Использует метод [`sendEmail`](https://www.unisender.com/ru/support/api/partners/sendemail/) UniSender API.
 
@@ -339,7 +337,7 @@ $authManager = new \LPhenom\Auth\Support\DefaultAuthManager(
           │          shared,kphp — одинаково в обоих режимах        │
           │                                                          │
           │  CryptPasswordHasher  ← хеш паролей (HMAC-SHA256)       │
-          │  UniSenderEmailSender ← email коды (curl_*)               │
+          │  UniSenderEmailSender ← email коды (file_get_contents)   │
           │  OpaqueTokenEncoder   ← токены (random_bytes + hash)     │
           │  MirSmsSender, CacheThrottle, DbTokenRepository...       │
           └─────────────────────────────────────────────────────────┘
@@ -388,7 +386,7 @@ $ref = new \ReflectionClass($obj);
 // ❌ password_hash / password_verify — используйте CryptPasswordHasher
 $hash = password_hash($plain, PASSWORD_BCRYPT);
 
-// ❌ fsockopen — используйте curl_*
+// ❌ fsockopen — используйте file_get_contents + HTTP context
 $sock = fsockopen('smtp.example.com', 587);
 
 // ❌ PDO / mysqli — используйте ConnectionInterface + FFI-драйвер
@@ -420,7 +418,7 @@ $pdo = new PDO('mysql:...');
 
 ### Нюанс 3: Email через UniSender API
 
-`UniSenderEmailSender` работает через `curl_*` — KPHP-совместимо.
+`UniSenderEmailSender` работает через `@file_get_contents()` — KPHP-совместимо.
 Это единственная реализация для обоих режимов. Никакой смены конфига при
 переходе shared↔kphp не требуется.
 
@@ -428,8 +426,8 @@ $pdo = new PDO('mysql:...');
 
 ### Нюанс 4: Тайм-аут HTTP-запросов в KPHP
 
-`MirSmsSender` и `UniSenderEmailSender` используют `curl_*` с тайм-аутом
-10 секунд. В KPHP `curl_exec` блокирует воркер. Используйте быстрые API (< 2 сек).
+`MirSmsSender` и `UniSenderEmailSender` используют `@file_get_contents` с тайм-аутом
+10 секунд. В KPHP `file_get_contents` блокирует воркер. Используйте быстрые API (< 2 сек).
 
 ---
 
