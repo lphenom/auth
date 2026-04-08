@@ -135,7 +135,8 @@ final class UniSenderEmailSenderTest extends TestCase
         // Write a tiny PHP responder script to a temp file
         $escapedBody = addslashes($responseBody);
         $script = sys_get_temp_dir() . '/lphenom_test_server_' . $this->serverPort . '.php';
-        file_put_contents($script,
+        file_put_contents(
+            $script,
             '<?php header("Content-Type: application/json"); echo "' . $escapedBody . '";'
         );
 
@@ -171,4 +172,3 @@ final class UniSenderEmailSenderTest extends TestCase
         $this->stopLocalServer();
     }
 }
-

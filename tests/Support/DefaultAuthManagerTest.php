@@ -187,13 +187,18 @@ final class DefaultAuthManagerTest extends TestCase
         $user = $manager->attempt('migrate@example.com', 'migratepass');
 
         self::assertNotNull($user, 'Login must succeed despite iteration count change');
-        self::assertNotNull($provider->getUpdatedHash('99'),
-            'updateAuthPasswordHash() must be called when needsRehash() returns true');
+        self::assertNotNull(
+            $provider->getUpdatedHash('99'),
+            'updateAuthPasswordHash() must be called when needsRehash() returns true'
+        );
 
         $newHash = $provider->getUpdatedHash('99');
         self::assertIsString($newHash);
-        self::assertStringStartsWith('$lphenom$sha256$200$', $newHash,
-            'Rehashed password must use the new iteration count');
+        self::assertStringStartsWith(
+            '$lphenom$sha256$200$',
+            $newHash,
+            'Rehashed password must use the new iteration count'
+        );
     }
 
     public function testRehashNotTriggeredForCurrentLphenomHash(): void
@@ -218,8 +223,10 @@ final class DefaultAuthManagerTest extends TestCase
 
         $manager->attempt('current@example.com', 'alreadycurrent');
 
-        self::assertNull($provider->getUpdatedHash('88'),
-            'updateAuthPasswordHash() must NOT be called when hash is already current');
+        self::assertNull(
+            $provider->getUpdatedHash('88'),
+            'updateAuthPasswordHash() must NOT be called when hash is already current'
+        );
     }
 
     public function testRehashSkippedWhenProviderDoesNotImplementUpdater(): void
@@ -274,8 +281,10 @@ final class DefaultAuthManagerTest extends TestCase
 
         $user = $manager->attempt('cross@example.com', 'crossbuild');
         self::assertNotNull($user, 'CryptPasswordHasher hash must verify in any build');
-        self::assertNull($provider->getUpdatedHash('66'),
-            'No rehash needed when iteration count matches');
+        self::assertNull(
+            $provider->getUpdatedHash('66'),
+            'No rehash needed when iteration count matches'
+        );
     }
 }
 

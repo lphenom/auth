@@ -31,4 +31,3 @@ interface PasswordHashUpdaterInterface
      */
     public function updateAuthPasswordHash(string $userId, string $newHash): void;
 }
-

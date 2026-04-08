@@ -88,4 +88,3 @@ final class CryptPasswordHasher implements PasswordHasherInterface
         return $h;
     }
 }
-
